@@ -57,7 +57,7 @@ spark=session.get_spark_session()
 # spark.table("AstroSight.bronze.API_RESPONSE").filter(col("API_Request_Type")=="gst").select("Raw_Api_Response").show(1,truncate=False)
 
 # Gst_Kp_Transformer.gst_kp_details()
-# spark.table("AstroSight.bronze.API_RESPONSE").filter(col("API_Request_Type")=="gst").select("request_id","refreshed_to_silver").show(truncate=False)
+spark.table("AstroSight.bronze.API_RESPONSE").filter(col("API_Request_Type")=="gst").select("request_id","refreshed_to_silver").show(truncate=False)
 
 
 # spark.sql("UPDATE AstroSight.bronze.API_RESPONSE set refreshed_to_silver='N' where API_Request_Type='gst'")
