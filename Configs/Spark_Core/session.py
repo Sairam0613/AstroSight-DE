@@ -26,8 +26,8 @@ def get_environment_config():
 
 
 def get_spark_session():
-    print("Came HERE")
     env = get_environment_config()
+    print("ENV:",env)
     config = configparser.ConfigParser()
     config_path = Path(__file__).parent / "Spark.conf"
     config.optionxform = str
@@ -53,6 +53,6 @@ def get_spark_session():
     return spark
 
 def create_namespaces(spark):
-    spark.sql("CREATE NAMESPACE IF NOT EXISTS bronze")
-    spark.sql("CREATE NAMESPACE IF NOT EXISTS silver")
-    spark.sql("CREATE NAMESPACE IF NOT EXISTS gold")
+    spark.sql("CREATE NAMESPACE IF NOT EXISTS AstroSight.bronze")
+    spark.sql("CREATE NAMESPACE IF NOT EXISTS AstroSight.silver")
+    spark.sql("CREATE NAMESPACE IF NOT EXISTS AstroSight.gold")
