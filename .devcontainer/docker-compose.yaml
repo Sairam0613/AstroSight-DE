@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  spark:
+    build: .
+    container_name: astrosight-spark
+    profiles: ["pipeline","dev"]
+    volumes:
+      - ../:/project
+    command: tail -f /dev/null
+
+  iceberg-rest:
+    image: tabulario/iceberg-rest:latest
+    container_name: astrosight-iceberg-rest
+    profiles: ["pipeline","dashboard","dev"]
+    ports:
+      - "8181:8181"
+    environment:
+      - CATALOG_CATALOG__IMPL=org.apache.iceberg.hadoop.HadoopCatalog
+      - CATALOG_WAREHOUSE=/project/Warehouse
+    volumes:
+      - ../:/project
+
+  trino:
+    image: trinodb/trino:406
+    container_name: astrosight-trino
+    profiles: ["dashboard"] 
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./trino/etc:/etc/trino
+      - ../:/project
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/v1/info"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  superset:
+    image: apache/superset:4.1.2 
+    container_name: astrosight-superset
+    profiles: ["dashboard"]
+    ports:
+      - "8088:8088"
+    environment:
+      - SUPERSET_SECRET_KEY=astrosight_secret
+    volumes:
+      - ../superset_home:/app/superset_home
+    command: >
+      bash -c "
+        python -m pip install sqlalchemy-trino trino &&
+        superset db upgrade &&
+        superset fab create-admin --username admin --firstname Admin --lastname User --email admin@astrosight.com --password admin || true &&
+        superset init &&
+        gunicorn --bind 0.0.0.0:8088 --workers 2 'superset.app:create_app()'"
+  airflow-webserver:
+    image: apache/airflow:2.8.0
+    container_name: astrosight-airflow-webserver
+    profiles: ["pipeline"]
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@host.docker.internal:5432/airflow
+      - AIRFLOW__CORE__FERNET_KEY=46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLt0nFDd80=
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__WEBSERVER__SECRET_KEY=astrosight_airflow_secret
+      - AIRFLOW__CORE__DEFAULT_TIMEZONE=Asia/Kolkata
+    ports:
+      - "8090:8080"
+    volumes:
+      - ../dags:/opt/airflow/dags
+      - ../logs:/opt/airflow/logs
+      - ../:/project
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: bash -c "airflow db migrate && airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@astrosight.com && airflow webserver"
+
+  airflow-scheduler:
+    image: apache/airflow:2.8.0
+    container_name: astrosight-airflow-scheduler
+    profiles: ["pipeline"]
+    depends_on:
+      - airflow-webserver
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@host.docker.internal:5432/airflow
+      - AIRFLOW__CORE__FERNET_KEY=46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLt0nFDd80=
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__WEBSERVER__SECRET_KEY=astrosight_airflow_secret
+      - AIRFLOW__CORE__DEFAULT_TIMEZONE=Asia/Kolkata
+    volumes:
+      - ../dags:/opt/airflow/dags
+      - ../logs:/opt/airflow/logs
+      - ../:/project
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: airflow scheduler

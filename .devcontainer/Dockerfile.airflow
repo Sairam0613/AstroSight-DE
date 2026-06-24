@@ -1,0 +1,7 @@
+FROM apache/airflow:2.8.0
+
+USER root
+
+RUN pip install requests PyYAML python-dotenv
+
+USER airflow

@@ -1,0 +1,20 @@
+param_map:
+  today:
+    type: dynamic
+    offset_days: 0
+  yesterday:
+    type: dynamic
+    offset_days : 1
+  week_start:
+    type : dynamic
+    offset_days : 7
+  month_start:
+    type: month_start
+  year_start:
+    type: year_start
+
+linked_events_map:
+  gst:
+    source_pk : gstID
+    target_pk : activityID
+    
