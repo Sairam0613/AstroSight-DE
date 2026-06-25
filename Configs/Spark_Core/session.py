@@ -28,29 +28,36 @@ def get_environment_config():
 def get_spark_session():
     env = get_environment_config()
     print("ENV:",env)
-    config = configparser.ConfigParser()
-    config_path = Path(__file__).parent / "Spark.conf"
-    config.optionxform = str
-    config.read(config_path)
-    spark_conf = SparkConf()
-
-    for (key,val) in config.items(env):
-        spark_conf.set(key,val)
-    spark = SparkSession.builder.config(conf=spark_conf).getOrCreate()
-    # spark = SparkSession.builder \
-    #     .appName("AstroSight") \
-    #     .master("local[2]") \
-    #     .config("spark.sql.extensions", "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions") \
-    #     .config("spark.sql.catalog.AstroSight", "org.apache.iceberg.spark.SparkCatalog") \
-    #     .config("spark.sql.catalog.AstroSight.catalog-impl", "org.apache.iceberg.rest.RESTCatalog") \
-    #     .config("spark.sql.catalog.AstroSight.uri", "http://astrosight-iceberg-rest:8181") \
-    #     .config("spark.sql.catalog.AstroSight.warehouse", "/project/Warehouse") \
-    #     .config("spark.driver.memory", "512m") \
-    #     .config("spark.executor.memory", "512m") \
-    #     .config("spark.sql.session.timeZone","Asia/Kolkata") \
-    #     .getOrCreate()
-    spark.sparkContext.setLogLevel("ERROR")
-    return spark
+    if env=='LOCAL':
+        spark = SparkSession.builder \
+            .appName("AstroSight") \
+            .master("local[2]") \
+            .config("spark.sql.extensions", "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions") \
+            .config("spark.sql.catalog.AstroSight", "org.apache.iceberg.spark.SparkCatalog") \
+            .config("spark.sql.catalog.AstroSight.catalog-impl", "org.apache.iceberg.rest.RESTCatalog") \
+            .config("spark.sql.catalog.AstroSight.uri", "http://astrosight-iceberg-rest:8181") \
+            .config("spark.sql.catalog.AstroSight.warehouse", "/project/Warehouse") \
+            .config("spark.driver.memory", "512m") \
+            .config("spark.executor.memory", "512m") \
+            .config("spark.sql.session.timeZone","Asia/Kolkata") \
+            .getOrCreate()
+        spark.sparkContext.setLogLevel("ERROR")
+        return spark
+    elif env=="AWS":
+        spark = SparkSession.builder \
+            .appName("AstroSight") \
+            .config("spark.sql.extensions", "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions") \
+            .config("spark.sql.catalog.AstroSight", "org.apache.iceberg.spark.SparkCatalog") \
+            .config("spark.sql.catalog.AstroSight.catalog-impl", "org.apache.iceberg.aws.glue.GlueCatalog") \
+            .config("spark.sql.catalog.AstroSight.io-impl", "org.apache.iceberg.aws.s3.S3FileIO") \
+            .config("spark.sql.catalog.AstroSight.warehouse", "s3://astrosight-de-data/warehouse/") \
+            .config("spark.sql.catalog.AstroSight.glue.region","ap-south-1") \
+            .config("spark.driver.memory", "512m") \
+            .config("spark.executor.memory", "512m") \
+            .config("spark.sql.session.timeZone","Asia/Kolkata") \
+            .getOrCreate()
+        spark.sparkContext.setLogLevel("ERROR")    
+        return spark    
 
 def create_namespaces(spark):
     spark.sql("CREATE NAMESPACE IF NOT EXISTS AstroSight.bronze")
