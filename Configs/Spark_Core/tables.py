@@ -4,8 +4,8 @@ silver="silver"
 gold="gold"
 
 def create_bronze_tables(spark):
-    spark.sql(f"""
-        CREATE TABLE IF NOT EXISTS {catalog}.{bronze}.API_RESPONSE (
+    create_sql = f"""
+        CREATE TABLE IF NOT EXISTS {catalog}.{bronze}.api_response (
             request_id STRING,
             URL_Endpoint STRING,
             API_Request_Type STRING,
@@ -18,9 +18,11 @@ def create_bronze_tables(spark):
             error_msg STRING,
             ingestion_timestamp TIMESTAMP
         )
-    """)
+    """
+    print(create_sql)
+    spark.sql(create_sql)
     spark.sql(f"""
-        CREATE TABLE IF NOT EXISTS {catalog}.{bronze}.API_ENDPOINTS(
+        CREATE TABLE IF NOT EXISTS {catalog}.{bronze}.api_endpoints(
             endpoint_id INT,
             api_name STRING,
             endpoint_name STRING,
@@ -33,7 +35,7 @@ def create_bronze_tables(spark):
     """)
 
     spark.sql(f"""
-        CREATE TABLE IF NOT EXISTS {catalog}.{bronze}.PROCESSING_ERROR_LOG(
+        CREATE TABLE IF NOT EXISTS {catalog}.{bronze}.processing_error_log(
         Error_Id STRING,
         request_id STRING,
         source_layer STRING,
@@ -47,7 +49,7 @@ def create_bronze_tables(spark):
     """)
 
     spark.sql(f"""
-        CREATE TABLE IF NOT EXISTS {catalog}.{bronze}.PIPELINE_WATERMARK(
+        CREATE TABLE IF NOT EXISTS {catalog}.{bronze}.pipeline_watermark(
         process_name STRING,
         last_processed_request_id STRING,
         last_processed_timestamp TIMESTAMP,
@@ -143,7 +145,7 @@ def create_gold_tables(spark):
         )""")
     
     spark.sql(f"""
-        CREATE TABLE IF NOT EXISTS {catalog}.{gold}.GST_Summary(
+        CREATE TABLE IF NOT EXISTS {catalog}.{gold}.gst_summary(
             summary_date DATE,
             total_gst_count  INT,
             refresh_timestamp TIMESTAMP

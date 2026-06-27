@@ -12,7 +12,7 @@ def transform_neo_close_data():
     session.create_namespaces(spark)
     tables.create_silver_tables(spark)
     successful_request_ids = []
-    required_df = (spark.table(f"{iceberg_catalog}.{bronze_layer}.API_RESPONSE")
+    required_df = (spark.table(f"{iceberg_catalog}.{bronze_layer}.api_response")
           .filter((col("API_Request_Type")=="neo")&(col("refreshed_to_silver")=="N")&(col("Response_status")==200)))
     for rec in required_df.toLocalIterator():
         try:

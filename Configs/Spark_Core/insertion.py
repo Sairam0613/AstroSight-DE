@@ -26,7 +26,7 @@ def insert_into_api_response(payload,spark):
     schema = Schemas.Bronze_api_response_schema()
     df = spark.createDataFrame(data,schema=schema)
     print("Inserting API response into Bronze layer")
-    df.writeTo(f"{iceberg_catalog}.{bronze}.API_RESPONSE").append()
+    df.writeTo(f"{iceberg_catalog}.{bronze}.api_response").append()
 
 def merge_into_neo_objects(payload,spark):
     schema = Schemas.Neo_Objects_Schema()
@@ -58,7 +58,7 @@ def insert_into_PROCESSING_ERROR_LOG(payload,spark):
     schema = Schemas.PROCESSING_ERROR_LOG_Schema()
     payload[0]['error_id']=str(uuid.uuid4())
     df = spark.createDataFrame(payload, schema=schema)
-    df.writeTo(f"{iceberg_catalog}.{bronze}.PROCESSING_ERROR_LOG").append()
+    df.writeTo(f"{iceberg_catalog}.{bronze}.processing_error_log").append()
 
 def Update_api_response_status(request_id,spark):
     print(f"Updating API response status to Y for request ids : {request_id}")
@@ -145,7 +145,7 @@ def update_pipeline_watermark(payload,spark):
     df = spark.createDataFrame(payload,schema)
     df.createOrReplaceTempView("pipeline_data")
     spark.sql(f"""
-        MERGE INTO {iceberg_catalog}.{bronze}.PIPELINE_WATERMARK TGT
+        MERGE INTO {iceberg_catalog}.{bronze}.pipeline_watermark TGT
         USING pipeline_data SRC
         ON SRC.process_name=TGT.process_name
         WHEN MATCHED THEN UPDATE SET *
@@ -158,7 +158,7 @@ def insert_into_gst_summary(df,spark):
     if df is not None:
         df.createOrReplaceTempView("gst_summary_data")
         spark.sql(f"""
-            MERGE INTO {iceberg_catalog}.{gold_layer}.GST_Summary as target
+            MERGE INTO {iceberg_catalog}.{gold_layer}.gst_summary as target
             USING gst_summary_data AS source
             ON target.summary_date = source.summary_date
             WHEN MATCHED THEN UPDATE SET *

@@ -7,7 +7,7 @@ bronze="bronze"
 
 def execute_scheduled_requests():
     spark = session.get_spark_session()
-    df = spark.table(f"{iceberg_catalog}.{bronze}.API_ENDPOINTS")\
+    df = spark.table(f"{iceberg_catalog}.{bronze}.api_endpoints")\
           .filter(col("endpoint_type")=="scheduled")\
           .filter(col("is_active")=="Y")\
           .filter(col("api_name")=="NASA")
