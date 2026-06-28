@@ -52,6 +52,8 @@ def get_spark_session():
             .config("spark.sql.catalog.AstroSight.io-impl", "org.apache.iceberg.aws.s3.S3FileIO") \
             .config("spark.sql.catalog.AstroSight.warehouse", "s3://astrosight-de-data/warehouse/") \
             .config("spark.sql.catalog.AstroSight.glue.region","ap-south-1") \
+            .config("spark.dynamicAllocation.enabled","false")\
+            .config("spark.executor.instances","1")\
             .config("spark.driver.memory", "512m") \
             .config("spark.executor.memory", "512m") \
             .config("spark.sql.session.timeZone","Asia/Kolkata") \

@@ -20,15 +20,15 @@ url_1 = f"https://api.nasa.gov/DONKI/GST"
 
 spark=session.get_spark_session()
 
+print(spark.conf.get("spark.dynamicAllocation.enabled"))
+print(spark.conf.get("spark.executor.instances"))
 
-session.create_namespaces(spark=spark)
-tables.create_bronze_tables(spark=spark)
-tables.create_silver_tables(spark=spark)
-tables.create_gold_tables(spark=spark)
-
+print("Starting Data Insertion")
 required_params = '{"start_date":"today","end_date":"today"}'
+print("Data Read")
 spark.sql(f"""INSERT INTO AstroSight.bronze.api_endpoints VALUES(1,'NASA','neo','{url}','{required_params}','Y','Y','scheduled')""")
+print("Inserted 1 Record")
 spark.sql(f"""INSERT INTO AstroSight.bronze.api_endpoints VALUES(2,'NASA','gst','{url_1}','{required_params}','Y','Y','scheduled')""")
-
+print("Data Insertion Completed")
 
 spark.stop()
