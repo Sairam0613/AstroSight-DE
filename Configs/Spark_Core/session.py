@@ -54,8 +54,9 @@ def get_spark_session():
             .config("spark.sql.catalog.AstroSight.glue.region","ap-south-1") \
             .config("spark.dynamicAllocation.enabled","false")\
             .config("spark.executor.instances","1")\
-            .config("spark.driver.memory", "512m") \
-            .config("spark.executor.memory", "512m") \
+            .config("spark.executor.cores","1")\
+            .config("spark.driver.memory", "2g") \
+            .config("spark.executor.memory", "2g") \
             .config("spark.sql.session.timeZone","Asia/Kolkata") \
             .getOrCreate()
         spark.sparkContext.setLogLevel("ERROR")    
