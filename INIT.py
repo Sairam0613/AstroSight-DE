@@ -1,13 +1,52 @@
 from datetime import date
-from Configs.Spark_Core import session,tables
+from Configs.Spark_Core import session,tables,insertion
+from Configs.API.API_HIT import get_url_response
+from Spark.Extract.NeoWS_Extract import execute_scheduled_requests
+from Spark.Transform import Neo_Tarnsformer,Neo_Approach_Transformer,Gst_Kp_Transformer,Gst_Transformer
+from Spark.Load import Neo_Rankings_Load,Neo_Summary_Load
+from Spark.Load.DAYN import GST_Rankings_DAYN,GST_Summary_DAYN
+from Configs.AWS import S3_TO_Bronze
 
 
+def Neo(spark):
+    # execute_scheduled_requests()
+    passed_ids_1 = Neo_Tarnsformer.transform_neo_data()
+    passed_ids_2 = Neo_Approach_Transformer.transform_neo_close_data()
+    passed_ids = list(set(passed_ids_1).intersection(set(passed_ids_2)))
 
-today = date.today().strftime("%Y-%m-%d")
+    failed_ids = list(set(passed_ids_1).symmetric_difference(set(passed_ids_2)))
+    try:
+        if passed_ids:
+            insertion.Update_api_response_status(passed_ids, spark)
+        if failed_ids:
+            insertion.Mark_api_response_as_failed(failed_ids,spark)
+    except Exception as e:
+        print(f"Error updating API response status: {e}")
+    Neo_Rankings_Load.Neo_Rankings()
+    Neo_Summary_Load.neo_summary_load()
 
-url = f"https://api.nasa.gov/neo/rest/v1/feed"
+def GST(spark):
+    passed_ids_1 = Gst_Transformer.gst_transform_data()
+    passed_ids_2 = Gst_Kp_Transformer.gst_kp_details()
+    passed_ids = list(set(passed_ids_1).intersection(set(passed_ids_2)))
+    failed_ids = list(set(passed_ids_1).symmetric_difference(set(passed_ids_2)))
 
-url_1 = f"https://api.nasa.gov/DONKI/GST"
+    try:
+        if passed_ids:
+            insertion.Update_api_response_status(passed_ids, spark)
+        if failed_ids:
+            insertion.Mark_api_response_as_failed(failed_ids,spark)
+    except Exception as e:
+        print(f"Error updating API response status: {e}")
+    GST_Rankings_DAYN.gst_Rankings_DAYN()
+    GST_Summary_DAYN.gst_summary_DAY0()
+
+
+# today = date.today().strftime("%Y-%m-%d")
+
+# url = f"https://api.nasa.gov/neo/rest/v1/feed"
+
+# url_1 = f"https://api.nasa.gov/DONKI/GST"
 
 
 # params = {
@@ -20,15 +59,11 @@ url_1 = f"https://api.nasa.gov/DONKI/GST"
 
 spark=session.get_spark_session()
 
-print(spark.conf.get("spark.dynamicAllocation.enabled"))
-print(spark.conf.get("spark.executor.instances"))
-
-print("Starting Data Insertion")
-required_params = '{"start_date":"today","end_date":"today"}'
-print("Data Read")
-spark.sql(f"""INSERT INTO AstroSight.bronze.api_endpoints VALUES(1,'NASA','neo','{url}','{required_params}','Y','Y','scheduled')""")
-print("Inserted 1 Record")
-spark.sql(f"""INSERT INTO AstroSight.bronze.api_endpoints VALUES(2,'NASA','gst','{url_1}','{required_params}','Y','Y','scheduled')""")
-print("Data Insertion Completed")
+print("Loading to Bronze from S3.")
+S3_TO_Bronze.Load_to_bronze(spark)
+print("Populating NEo data")
+Neo(spark)
+print("Populating GST data")
+GST(spark)
 
 spark.stop()

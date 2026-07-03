@@ -62,4 +62,4 @@ with DAG(
         """
     )
 
-    neo_extract >> [neo_tranform,neo_approach_transform] >> update_api_status >> [neo_rankings_load,neo_summary_load]
+    neo_extract >> neo_tranform >> neo_approach_transform >> update_api_status >> neo_rankings_load >> neo_summary_load

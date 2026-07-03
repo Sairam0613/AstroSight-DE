@@ -1,7 +1,6 @@
 from pyspark.sql import SparkSession
 from pyspark import SparkConf
 import os
-import configparser
 from pathlib import Path
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -37,8 +36,8 @@ def get_spark_session():
             .config("spark.sql.catalog.AstroSight.catalog-impl", "org.apache.iceberg.rest.RESTCatalog") \
             .config("spark.sql.catalog.AstroSight.uri", "http://astrosight-iceberg-rest:8181") \
             .config("spark.sql.catalog.AstroSight.warehouse", "/project/Warehouse") \
-            .config("spark.driver.memory", "512m") \
-            .config("spark.executor.memory", "512m") \
+            .config("spark.driver.memory", "1g") \
+            .config("spark.executor.memory", "1g") \
             .config("spark.sql.session.timeZone","Asia/Kolkata") \
             .getOrCreate()
         spark.sparkContext.setLogLevel("ERROR")

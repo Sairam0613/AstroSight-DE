@@ -25,3 +25,5 @@ airflow/logs/
 airflow/plugins/__pycache__/
 
 Configs/Configs.conf
+
+.devcontainer/Spark_Jars/*

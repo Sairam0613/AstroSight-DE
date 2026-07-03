@@ -61,4 +61,4 @@ with DAG(
         """
     )
 
-    [gst_transform,gst_kp_transform] >> update_api_status >> [gst_rankings_load,gst_summary_load,gst_distribution_load]
+    gst_transform >> gst_kp_transform >> update_api_status >> gst_rankings_load >> gst_summary_load >> gst_distribution_load

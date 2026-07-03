@@ -7,7 +7,12 @@ services:
     profiles: ["pipeline","dev"]
     volumes:
       - ../:/project
-    command: tail -f /dev/null
+      - ${USERPROFILE}\.aws:/root/.aws:ro
+    command: >
+      bash -c "
+      pip install boto3 &&
+      tail -f /dev/null
+      "
 
   iceberg-rest:
     image: tabulario/iceberg-rest:latest
