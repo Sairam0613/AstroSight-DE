@@ -74,4 +74,3 @@ def Load_to_bronze(spark):
                 continue
             insertion.insert_into_api_response(payload,spark)
     spark.table("AstroSight.bronze.api_endpoints").show()
-Load_to_bronze()
