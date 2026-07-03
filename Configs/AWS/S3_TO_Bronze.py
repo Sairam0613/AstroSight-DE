@@ -49,8 +49,8 @@ def Load_to_bronze(spark):
         for file in files_response.get("Contents",[]):
             file_name = file['Key'].split("/")[-1]
             endpoint_url = spark.table("AstroSight.bronze.api_endpoints").filter(col("endpoint_name")==api_name).first()['endpoint_url']
-            data = spark.read.text(f"s3a://astrosight-de-data/{file['Key']}")
-            raw_response = "/n".join(row.value for row in data.collect())
+            data = spark.read.text(f"s3a://astrosight-de-data/{file['Key']}").first()['value']
+            raw_response = json.loads(data)
             if file_name == "api_response.json":
                 payload = {
                     "URL_Endpoint": endpoint_url,
@@ -60,7 +60,7 @@ def Load_to_bronze(spark):
                     "Response_status": 200,
                     "error_msg": None
                 }
-            elif file_name == "Error.json":
+            elif file_name == "error.json":
                 payload = {
                     "URL_Endpoint": endpoint_url,
                     "API_Request_Type": api_name,
@@ -73,4 +73,3 @@ def Load_to_bronze(spark):
                 print(f"Skipping for file {file_name}")
                 continue
             insertion.insert_into_api_response(payload,spark)
-    spark.table("AstroSight.bronze.api_endpoints").show()

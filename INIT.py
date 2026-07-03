@@ -53,12 +53,10 @@ def GST(spark):
 # print(response)
 
 
-spark=session.get_spark_session()
-print("Loading to Bronze from S3.")
+# spark=session.get_spark_session()
+spark=S3_TO_Bronze.get_spark()
 S3_TO_Bronze.Load_to_bronze(spark=spark)
-print("Populating NEo data")
 Neo(spark)
-print("Populating GST data")
 GST(spark)
 
 spark.stop()
