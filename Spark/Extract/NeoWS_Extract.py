@@ -1,4 +1,4 @@
-from Configs.Spark_Core import session,insertion
+from Configs.Spark_Core import session,insertion,pipeline_audit
 from Configs.API import Resolve_Params,API_HIT
 from pyspark.sql.functions import col
 iceberg_catalog = "AstroSight"
@@ -7,6 +7,7 @@ bronze="bronze"
 
 def execute_scheduled_requests():
     spark = session.get_spark_session()
+    request_id = pipeline_audit.start_audit(pipeline_stage='API_TO_BRONZE',pipeline_target_table='api_response',spark=spark)
     df = spark.table(f"{iceberg_catalog}.{bronze}.api_endpoints")\
           .filter(col("endpoint_type")=="scheduled")\
           .filter(col("is_active")=="Y")\
@@ -34,10 +35,11 @@ def execute_scheduled_requests():
                     "Response_status": status,
                     "error_msg": data
                 }
-
             insertion.insert_into_api_response(payload,spark)
+            pipeline_audit.end_audit(status='PASSED',request_id=request_id,spark=spark)
         except Exception as e:
             print(f"Job Failed with error {e}")
+            pipeline_audit.end_audit(status='FAILED',request_id=request_id,spark=spark)
 
 if __name__ == "__main__":
     execute_scheduled_requests()

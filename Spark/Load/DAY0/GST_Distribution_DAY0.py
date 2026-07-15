@@ -1,4 +1,4 @@
-from Configs.Spark_Core import session, tables,insertion
+from Configs.Spark_Core import session, tables,insertion,pipeline_audit
 
 iceberg_catalog = "AstroSight"
 silver_layer = "silver"
@@ -6,6 +6,7 @@ gold_layer = "gold"
 
 def gst_distribution_DAY0():
     spark=session.get_spark_session()
+    request_id = pipeline_audit.start_audit(pipeline_stage='SILVER_TO_GOLD',pipeline_target_table='gst_distribution',spark=spark)
     tables.create_gold_tables(spark)
 
     df = spark.sql(f"""
@@ -27,6 +28,8 @@ def gst_distribution_DAY0():
         group by severity_bucket
     """)
     insertion.insert_into_gst_distribution(df,spark=spark)
+    pipeline_audit.end_audit(status='PASSED',request_id=request_id,spark=spark)
+
 
 if __name__ == "__main__":
     gst_distribution_DAY0()

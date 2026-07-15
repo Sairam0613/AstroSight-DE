@@ -153,3 +153,18 @@ def GST_Distribution_Schema():
         StructField('refresh_timestamp',TimestampType(),False)
     ])
     return schema
+
+def Pipeline_AUDIT_Schema():
+    schema = StructType([
+        StructField('Pipeline_Audit_ID',StringType(),False),
+        StructField('Pipeline_run_date',DateType(),False),
+        StructField('pipeline_stage',StringType(),False),
+        StructField('pipeline_target_table',StringType(),False),
+        StructField('pipeline_start_time',TimestampType(),False),
+        StructField('pipeline_end_time',TimestampType()),
+        StructField('pipeline_stage_status',StringType()),
+        StructField('pipeline_expected_records',IntegerType()),
+        StructField('pipeline_processed_records',IntegerType()),
+        StructField('ingestion_timestamp',TimestampType(),False)
+    ])
+    return schema

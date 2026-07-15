@@ -1,4 +1,5 @@
 from Configs.Spark_Core import session, tables,insertion
+from Configs.Spark_Core import pipeline_audit
 
 iceberg_catalog = "AstroSight"
 silver_layer = "silver"
@@ -7,6 +8,7 @@ gold_layer = "gold"
 
 def Neo_Rankings():
     spark=session.get_spark_session()
+    request_id = pipeline_audit.start_audit(pipeline_stage='SILVER_TO_GOLD',pipeline_target_table='neo_rankings',spark=spark)
     tables.create_gold_tables(spark)
     df = spark.sql(f"""
         with A as (
@@ -60,6 +62,7 @@ def Neo_Rankings():
         select * from C where largest_rank <=5 or closest_rank <=5 or fastest_rank <=5
         """)
     insertion.insert_into_neo_rankings(df,spark)
+    pipeline_audit.end_audit(status='PASSED',request_id=request_id,spark=spark)
 
 if __name__ == "__main__":
     Neo_Rankings()

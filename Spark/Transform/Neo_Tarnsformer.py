@@ -1,4 +1,4 @@
-from Configs.Spark_Core import session,tables,insertion
+from Configs.Spark_Core import session,tables,insertion,pipeline_audit
 from pyspark.sql.functions import col
 import json
 from datetime import datetime
@@ -10,6 +10,7 @@ silver = "silver"
 
 def transform_neo_data():
     spark = session.get_spark_session()
+    request_id = pipeline_audit.start_audit(pipeline_stage='BRONZE_TO_SILVER',pipeline_target_table='neo_objects',spark=spark)
     session.create_namespaces(spark)
     tables.create_silver_tables(spark)
     successful_request_ids = []
@@ -31,6 +32,7 @@ def transform_neo_data():
                 }]
                 insertion.merge_into_neo_objects(payload, spark)
             successful_request_ids.append(rec["request_id"])
+            pipeline_audit.end_audit(status='PASSED',request_id=request_id,spark=spark)
         except Exception as e:
             payload = [{
                 "request_id":rec['request_id'],
@@ -43,6 +45,7 @@ def transform_neo_data():
                 "status":"OPEN"
             }]
             insertion.insert_into_PROCESSING_ERROR_LOG(payload, spark)
+            pipeline_audit.end_audit(status='FAILED',request_id=request_id,spark=spark)
     return successful_request_ids
 
 if __name__ == "__main__":

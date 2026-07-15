@@ -58,7 +58,7 @@ def get_spark_session():
         #     .config("spark.sql.session.timeZone","Asia/Kolkata") \
         #     .getOrCreate()
         # spark.sparkContext.setLogLevel("ERROR")    
-        # return spark
+        return spark
     elif env=="AWS":
         spark = SparkSession.builder \
             .appName("AstroSight") \

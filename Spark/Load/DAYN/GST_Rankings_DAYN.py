@@ -1,4 +1,4 @@
-from Configs.Spark_Core import session, tables,insertion
+from Configs.Spark_Core import session, tables,insertion,pipeline_audit
 
 iceberg_catalog = "AstroSight"
 silver_layer = "silver"
@@ -7,6 +7,7 @@ gold_layer = "gold"
 def gst_Rankings_DAYN():
     spark=session.get_spark_session()
     tables.create_gold_tables(spark)
+    request_id = pipeline_audit.start_audit(pipeline_stage='SILVER_TO_GOLD',pipeline_target_table='gst_rankings',spark=spark)
 
     df = spark.sql(f"""
         with A as (
@@ -45,6 +46,7 @@ def gst_Rankings_DAYN():
           where longest_rank<=5 or strongest_rank <=5
     """)
     insertion.insert_into_gst_rankings(df,spark)
+    pipeline_audit.end_audit(status='PASSED',request_id=request_id,spark=spark)
 
 if __name__ == "__main__":
     gst_Rankings_DAYN()

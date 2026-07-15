@@ -180,3 +180,17 @@ def insert_into_gst_distribution(df,spark):
         df.writeTo(f"{iceberg_catalog}.{gold_layer}.gst_distribution").createOrReplace()
     else:
         print("DataFrame is Not Available for Insertion into gst_distribution table")
+
+def insert_into_pipeline_audit(spark,payload):
+    schema = Schemas.Pipeline_AUDIT_Schema()
+    df = spark.createDataFrame(payload,schema=schema)
+    df.writeTo(f"{iceberg_catalog}.{bronze}.pipeline_audit").append()
+
+
+def Update_pipeline_audit(status,request_id,spark):
+    spark.sql(f"""
+        UPDATE {iceberg_catalog}.{bronze}.pipeline_audit T
+        SET T.pipeline_end_time=current_timestamp(),T.pipeline_stage_status='{status}',
+        T.ingestion_timestamp=current_timestamp()
+        WHERE T.Pipeline_Audit_ID='{request_id}'
+    """)

@@ -19,7 +19,6 @@ def create_bronze_tables(spark):
             ingestion_timestamp TIMESTAMP
         )
     """
-    print(create_sql)
     spark.sql(create_sql)
     spark.sql(f"""
         CREATE TABLE IF NOT EXISTS {catalog}.{bronze}.api_endpoints(
@@ -54,6 +53,21 @@ def create_bronze_tables(spark):
         last_processed_request_id STRING,
         last_processed_timestamp TIMESTAMP,
         updated_timestamp TIMESTAMP
+        )
+    """)
+
+    spark.sql(f"""
+        CREATE TABLE IF NOT EXISTS {catalog}.{bronze}.pipeline_audit(
+        Pipeline_Audit_ID STRING,
+        Pipeline_run_date DATE,
+        pipeline_stage STRING,
+        pipeline_target_table STRING,
+        pipeline_start_time TIMESTAMP,
+        pipeline_end_time TIMESTAMP,
+        pipeline_stage_status STRING,
+        pipeline_expected_records INT,
+        pipeline_processed_records INT,
+        ingestion_timestamp TIMESTAMP
         )
     """)
 
