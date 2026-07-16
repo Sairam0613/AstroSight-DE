@@ -105,6 +105,7 @@ Every pipeline execution is continuously monitored by capturing execution status
 
 ### 📁 Project Structure
 
+```text
 AstroSight/
 │
 ├── .devcontainer            # Docker Configuration
@@ -123,6 +124,7 @@ AstroSight/
 ├── Images/                  # README screenshots
 ├── README.md
 └── requirements.txt
+```
 
 ## 📊 Dashboards
 
@@ -132,7 +134,7 @@ AstroSight provides interactive dashboards that enable users to explore processe
 
 The Business Dashboard presents interactive visualizations and analytical insights generated from the processed datasets. It enables users to explore trends, key metrics, and business information through an intuitive and user-friendly interface.
 
-> 📷 *Business Dashboard Screenshot*
+![Local Architecture](Images/neo_dashboard.png)
 
 ---
 
@@ -140,8 +142,7 @@ The Business Dashboard presents interactive visualizations and analytical insigh
 
 The Pipeline Audit Dashboard provides real-time visibility into pipeline execution by tracking execution status, stage runtimes, processing duration, transformation statistics, and error metrics. It helps monitor pipeline health, identify failures, and simplify operational troubleshooting.
 
-> 📷 *Pipeline Audit Dashboard Screenshot*
-
+![Local Architecture](Images/pipeline_audit.png)
 
 ## 🔐 Security
 
