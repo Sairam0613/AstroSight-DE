@@ -15,7 +15,7 @@ with DAG(
     default_args=default_args,
     description="Master DAG for AstroSight",
     start_date=datetime(2026, 1, 1),
-    schedule_interval="30 10 * * *",
+    schedule_interval="30 8 * * *",
     catchup=False,
     max_active_runs=1,
     tags=["AstroSight", "Master"]
