@@ -45,6 +45,7 @@ AstroSight Supports both local development and cloud deployment. The following d
 
 ### Local Development Architecture
 
+
 ![Local Architecture](images/local_architecture.png)
 
 
