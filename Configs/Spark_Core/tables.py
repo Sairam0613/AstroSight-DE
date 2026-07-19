@@ -81,6 +81,7 @@ def create_silver_tables(spark):
         estimated_diameter_max_kms DOUBLE,
         is_potentially_hazardous BOOLEAN,
         nasa_jpl_url STRING,
+        feed_date DATE,
         ingestion_timestamp TIMESTAMP
         )
     """)
@@ -96,6 +97,7 @@ def create_silver_tables(spark):
             relative_velocity_kmph DOUBLE,
             relative_velocity_kmps DOUBLE,
             orbiting_body STRING,
+            feed_date DATE,
             ingestion_timestamp TIMESTAMP
             )
         """)

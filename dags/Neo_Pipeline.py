@@ -50,7 +50,7 @@ with DAG(
         task_id = "neo_rankings_load",
         bash_command = """
         docker exec astrosight-spark \
-        spark-submit /project/Spark/Load/Neo_Rankings_Load.py
+        spark-submit /project/Spark/Load/DAYN/Neo_Rankings_Load_DAYN.py
         """
     )
 
@@ -58,7 +58,7 @@ with DAG(
         task_id = "neo_summary_load",
         bash_command = """
         docker exec astrosight-spark \
-        spark-submit /project/Spark/Load/Neo_Summary_Load.py
+        spark-submit /project/Spark/Load/DAYN/Neo_Summary_Load_DAYN.py
         """
     )
 

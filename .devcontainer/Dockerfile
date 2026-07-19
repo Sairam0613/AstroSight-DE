@@ -26,3 +26,12 @@ WORKDIR /project
 
 # COPY Manual Jars to Spark Jars
 COPY Spark_Jars/*.jar /opt/spark/jars
+
+
+#Install streamlit Python packages
+RUN pip3 install \
+         streamlit\
+         plotly\
+         pandas\
+         SQLAlchemy
+         

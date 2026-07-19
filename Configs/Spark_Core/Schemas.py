@@ -26,6 +26,7 @@ def Neo_Objects_Schema():
         StructField('estimated_diameter_max_kms',DoubleType(),True),
         StructField('is_potentially_hazardous',BooleanType(),False),
         StructField('nasa_jpl_url',StringType(),False),
+        StructField('feed_date',DateType(), True),
         StructField('ingestion_timestamp',TimestampType(), True)
     ])
     return schema
@@ -41,6 +42,7 @@ def Neo_close_approach_Schema():
         StructField('relative_velocity_kmph',DoubleType(),True),
         StructField('relative_velocity_kmps',DoubleType(),True),
         StructField('orbiting_body',StringType(),True),
+        StructField('feed_date',DateType(), True),
         StructField('ingestion_timestamp',TimestampType(), True)
     ])
     return schema

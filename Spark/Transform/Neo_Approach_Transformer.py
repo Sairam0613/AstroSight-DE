@@ -18,21 +18,23 @@ def transform_neo_close_data():
     for rec in required_df.toLocalIterator():
         try:
             raw_response = json.loads(rec['Raw_Api_Response'])
-            for row in raw_response['near_earth_objects'][list(raw_response['near_earth_objects'].keys())[0]]:
-                payload = [{
-                    "Asteroid_Id": row["id"],
-                    "close_approach_date_full": datetime.strptime(row["close_approach_data"][0]["close_approach_date_full"],"%Y-%b-%d %H:%M"),
-                    "miss_distance_kms": float(row["close_approach_data"][0]["miss_distance"]["kilometers"]),
-                    "miss_distance_miles": float(row["close_approach_data"][0]["miss_distance"]["miles"]),
-                    "miss_distance_lunar": float(row["close_approach_data"][0]["miss_distance"]["lunar"]),
-                    "relative_velocity_kmph": float(
-                        row["close_approach_data"][0]["relative_velocity"]["kilometers_per_hour"]),
-                    "relative_velocity_kmps": float(
-                        row["close_approach_data"][0]["relative_velocity"]["kilometers_per_second"]),
-                    "orbiting_body": row["close_approach_data"][0]["orbiting_body"],
-                    "ingestion_timestamp": datetime.now()
-                }]
-                insertion.insert_into_neo_close_approach(payload, spark)
+            for feed_date,asteroids in raw_response['near_earth_objects'].items():
+                for row in asteroids:
+                    payload = [{
+                        "Asteroid_Id": row["id"],
+                        "close_approach_date_full": datetime.strptime(row["close_approach_data"][0]["close_approach_date_full"],"%Y-%b-%d %H:%M"),
+                        "miss_distance_kms": float(row["close_approach_data"][0]["miss_distance"]["kilometers"]),
+                        "miss_distance_miles": float(row["close_approach_data"][0]["miss_distance"]["miles"]),
+                        "miss_distance_lunar": float(row["close_approach_data"][0]["miss_distance"]["lunar"]),
+                        "relative_velocity_kmph": float(
+                            row["close_approach_data"][0]["relative_velocity"]["kilometers_per_hour"]),
+                        "relative_velocity_kmps": float(
+                            row["close_approach_data"][0]["relative_velocity"]["kilometers_per_second"]),
+                        "orbiting_body": row["close_approach_data"][0]["orbiting_body"],
+                        'feed_date':datetime.strptime(feed_date,"%Y-%m-%d").date(),
+                        "ingestion_timestamp": datetime.now()
+                    }]
+                    insertion.insert_into_neo_close_approach(payload, spark)
             successful_request_ids.append(rec["request_id"])
             pipeline_audit.end_audit(status='PASSED',request_id=request_id,spark=spark)
         except Exception as e:

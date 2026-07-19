@@ -1,9 +1,10 @@
 from Configs.Spark_Core import session,insertion,tables
 from Spark.Transform import Neo_Tarnsformer,Neo_Approach_Transformer,Gst_Kp_Transformer,Gst_Transformer
 from Spark.Load import Neo_Rankings_Load,Neo_Summary_Load
-from Spark.Load.DAYN import GST_Rankings_DAYN,GST_Summary_DAYN
-from Spark.Load.DAY0 import GST_Summary_DAY0
+from Spark.Load.DAYN import GST_Rankings_DAYN,GST_Summary_DAYN,Neo_Summary_Load_DAYN,Neo_Rankings_Load_DAYN
+from Spark.Load.DAY0 import GST_Summary_DAY0,Neo_Rankings_DAY0,Neo_Summary_Load_DAY0
 from Configs.AWS import S3_TO_Bronze
+from pyspark.sql.functions import col
 
 def Neo(spark):
     passed_ids_1 = Neo_Tarnsformer.transform_neo_data()
@@ -18,8 +19,8 @@ def Neo(spark):
             insertion.Mark_api_response_as_failed(failed_ids,spark)
     except Exception as e:
         print(f"Error updating API response status: {e}")
-    Neo_Rankings_Load.Neo_Rankings()
-    Neo_Summary_Load.neo_summary_load()
+    Neo_Summary_Load_DAYN.neo_summary_load_DAYN()
+    Neo_Rankings_Load_DAYN.Neo_Rankings()
 
 def GST(spark):
     passed_ids_1 = Gst_Transformer.gst_transform_data()
@@ -54,11 +55,10 @@ def GST(spark):
 
 
 spark=session.get_spark_session()
-tables.create_bronze_tables(spark)
+# tables.create_bronze_tables(spark)
 # spark=S3_TO_Bronze.get_spark()
 S3_TO_Bronze.Load_to_bronze(spark=spark)
 Neo(spark)
 GST(spark)
-
 
 spark.stop()

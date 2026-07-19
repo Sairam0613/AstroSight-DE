@@ -19,18 +19,20 @@ def transform_neo_data():
     for rec in required_df.toLocalIterator():
         try:
             raw_response = json.loads(rec['Raw_Api_Response'])
-            for row in raw_response['near_earth_objects'][list(raw_response['near_earth_objects'].keys())[0]]:
-                payload = [{
-                    'Asteroid_Id': row['id'],
-                    'Asteroid_Name': row['name'],
-                    'absolute_magnitude': row['absolute_magnitude_h'],
-                    'estimated_diameter_min_kms': row['estimated_diameter']['kilometers']['estimated_diameter_min'],
-                    'estimated_diameter_max_kms': row['estimated_diameter']['kilometers']['estimated_diameter_max'],
-                    'is_potentially_hazardous': row['is_potentially_hazardous_asteroid'],
-                    'nasa_jpl_url': row['nasa_jpl_url'],
-                    'ingestion_timestamp': datetime.now()
-                }]
-                insertion.merge_into_neo_objects(payload, spark)
+            for feed_date,asteroids in raw_response['near_earth_objects'].items():
+                for row in asteroids:
+                    payload = [{
+                        'Asteroid_Id': row['id'],
+                        'Asteroid_Name': row['name'],
+                        'absolute_magnitude': row['absolute_magnitude_h'],
+                        'estimated_diameter_min_kms': row['estimated_diameter']['kilometers']['estimated_diameter_min'],
+                        'estimated_diameter_max_kms': row['estimated_diameter']['kilometers']['estimated_diameter_max'],
+                        'is_potentially_hazardous': row['is_potentially_hazardous_asteroid'],
+                        'nasa_jpl_url': row['nasa_jpl_url'],
+                        'feed_date':datetime.strptime(feed_date,"%Y-%m-%d").date(),
+                        'ingestion_timestamp': datetime.now()
+                    }]
+                    insertion.merge_into_neo_objects(payload, spark)
             successful_request_ids.append(rec["request_id"])
             pipeline_audit.end_audit(status='PASSED',request_id=request_id,spark=spark)
         except Exception as e:

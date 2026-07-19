@@ -29,30 +29,36 @@ def insert_into_api_response(payload,spark):
     df.writeTo(f"{iceberg_catalog}.{bronze}.api_response").append()
 
 def merge_into_neo_objects(payload,spark):
-    schema = Schemas.Neo_Objects_Schema()
-    df = spark.createDataFrame(payload,schema=schema)
-    df.createOrReplaceTempView("new_data")
-    spark.sql(f"""
-        MERGE INTO {iceberg_catalog}.{silver_layer}.neo_objects as target
-        USING new_data AS source
-        ON target.Asteroid_Id=source.Asteroid_Id
-        WHEN MATCHED THEN UPDATE SET *
-        WHEN NOT MATCHED THEN INSERT *
-    """)
+    try:
+        schema = Schemas.Neo_Objects_Schema()
+        df = spark.createDataFrame(payload,schema=schema)
+        df.createOrReplaceTempView("new_data")
+        spark.sql(f"""
+            MERGE INTO {iceberg_catalog}.{silver_layer}.neo_objects as target
+            USING new_data AS source
+            ON target.Asteroid_Id=source.Asteroid_Id
+            WHEN MATCHED THEN UPDATE SET *
+            WHEN NOT MATCHED THEN INSERT *
+        """)
+    except Exception as e:
+        print("Merge Failed with error:",e)
 
 def insert_into_neo_close_approach(payload,spark):
-    schema = Schemas.Neo_close_approach_Schema()
-    payload[0]['Approach_id'] = str(uuid.uuid4())
-    df = spark.createDataFrame(payload, schema=schema)
-    df.createOrReplaceTempView("neo_approach_data")
-    spark.sql(f"""
-        MERGE INTO {iceberg_catalog}.{silver_layer}.neo_close_approaches as target
-        USING neo_approach_data AS source
-        ON target.Asteroid_Id=source.Asteroid_Id 
-        and target.close_approach_date_full=source.close_approach_date_full
-        when matched then UPDATE SET *
-        WHEN NOT MATCHED THEN INSERT *
-    """)
+    try:
+        schema = Schemas.Neo_close_approach_Schema()
+        payload[0]['Approach_id'] = str(uuid.uuid4())
+        df = spark.createDataFrame(payload, schema=schema)
+        df.createOrReplaceTempView("neo_approach_data")
+        spark.sql(f"""
+            MERGE INTO {iceberg_catalog}.{silver_layer}.neo_close_approaches as target
+            USING neo_approach_data AS source
+            ON target.Asteroid_Id=source.Asteroid_Id 
+            and target.close_approach_date_full=source.close_approach_date_full
+            when matched then UPDATE SET *
+            WHEN NOT MATCHED THEN INSERT *
+        """)
+    except Exception as e:
+        print("Merge Failed with Error:",e)
 
 def insert_into_PROCESSING_ERROR_LOG(payload,spark):
     schema = Schemas.PROCESSING_ERROR_LOG_Schema()
@@ -65,7 +71,7 @@ def Update_api_response_status(request_id,spark):
     ids = ",".join([f"'{id}'" for id in request_id])
     spark.sql(f"""
         UPDATE {iceberg_catalog}.{bronze}.api_response
-        SET refreshed_to_silver = 'Y',
+        SET refreshed_to_silver = 'X',
         refreshed_timestamp = current_timestamp()
         WHERE request_id in ({ids})
     """)

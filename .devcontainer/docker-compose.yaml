@@ -97,3 +97,19 @@ services:
       - ../:/project
       - /var/run/docker.sock:/var/run/docker.sock
     command: airflow scheduler
+
+  streamlit:
+    build: .
+    container_name: astrosight-streamlit
+    profiles: ["dashboard","dev"]
+    volumes:
+      - ../:/project
+    ports:
+      - "8501:8501"
+    command: >
+      bash -c "
+      streamlit run /project/Streamlit/app.py
+      --server.address=0.0.0.0
+      --server.port=8501
+      --server.fileWatcherType=poll
+      "
