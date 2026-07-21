@@ -1,4 +1,4 @@
-from pyspark.sql.types import StructType, StructField, StringType, IntegerType, TimestampType,DoubleType,BooleanType,DateType
+from pyspark.sql.types import StructType, StructField, StringType, IntegerType, TimestampType,DoubleType,BooleanType,DateType,LongType
 
 
 def Bronze_api_response_schema():
@@ -168,5 +168,20 @@ def Pipeline_AUDIT_Schema():
         StructField('pipeline_expected_records',IntegerType()),
         StructField('pipeline_processed_records',IntegerType()),
         StructField('ingestion_timestamp',TimestampType(),False)
+    ])
+    return schema
+
+def apod_details_schema():
+    schema = StructType([
+        StructField("apod_id", StringType(), True),
+        StructField("feed_date", DateType(), True),
+        StructField("apod_title", StringType(), True),
+        StructField("apod_media_type", StringType(), True),
+        StructField("apod_explanation", StringType(), True),
+        StructField("apod_url", StringType(), True),
+        StructField("apod_hd_url", StringType(), True),
+        StructField("apod_copyright", StringType(), True),
+        StructField("apod_service_version", StringType(), True),
+        StructField("ingestion_timestamp", TimestampType(), True)
     ])
     return schema

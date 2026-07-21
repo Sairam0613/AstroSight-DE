@@ -135,6 +135,22 @@ def create_silver_tables(spark):
             )
         USING iceberg
         """)
+    
+    spark.sql(f"""
+            CREATE TABLE IF NOT EXISTS {catalog}.{silver}.apod_details (
+            apod_id STRING,
+            feed_date DATE,
+            apod_title STRING,
+            apod_media_type STRING,
+            apod_explanation STRING,
+            apod_url STRING,
+            apod_hd_url STRING,
+            apod_copyright STRING,
+            apod_service_version STRING,
+            ingestion_timestamp TIMESTAMP
+            )
+            USING iceberg
+        """)
 
 def create_gold_tables(spark):
     spark.sql(f"""

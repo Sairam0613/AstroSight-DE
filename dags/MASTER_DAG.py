@@ -45,9 +45,18 @@ with DAG(
         failed_states=["failed"]
     )
 
-
+    apod_pipeline = TriggerDagRunOperator(
+        task_id = "trigger_apod_pipeline",
+        trigger_dag_id = "APOD_pipeline",
+        wait_for_completion=True,
+        poke_interval = 30,
+        reset_dag_run = True,
+        allowed_states = ['success'],
+        failed_states = ['failed']
+    )
+    
     end = EmptyOperator(
         task_id="end"
     )
 
-    start >>  neo_pipeline >> gst_pipeline >> end
+    start >>  neo_pipeline >> gst_pipeline >> apod_pipeline >> end

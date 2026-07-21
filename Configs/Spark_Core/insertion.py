@@ -71,7 +71,7 @@ def Update_api_response_status(request_id,spark):
     ids = ",".join([f"'{id}'" for id in request_id])
     spark.sql(f"""
         UPDATE {iceberg_catalog}.{bronze}.api_response
-        SET refreshed_to_silver = 'X',
+        SET refreshed_to_silver = 'Y',
         refreshed_timestamp = current_timestamp()
         WHERE request_id in ({ids})
     """)
@@ -147,7 +147,6 @@ def insert_into_linked_events(payload,spark):
 
 def update_pipeline_watermark(payload,spark):
     schema = Schemas.PIPELINE_WATERMARK_Schema()
-    print(payload)
     df = spark.createDataFrame(payload,schema)
     df.createOrReplaceTempView("pipeline_data")
     spark.sql(f"""
@@ -200,3 +199,21 @@ def Update_pipeline_audit(status,request_id,spark):
         T.ingestion_timestamp=current_timestamp()
         WHERE T.Pipeline_Audit_ID='{request_id}'
     """)
+
+def merge_into_apod_details(spark,payload):
+    try:
+        payload[0]['apod_id']=str(uuid.uuid4())
+        schema = Schemas.apod_details_schema()
+        df = spark.createDataFrame(payload,schema)
+        df.createOrReplaceTempView("apod_details")
+        spark.sql(f"""
+            MERGE INTO {iceberg_catalog}.{silver_layer}.apod_details t
+            USING apod_details s
+            ON t.feed_date = s.feed_date AND t.apod_title = s.apod_title
+            WHEN MATCHED THEN 
+                UPDATE SET *
+            WHEN NOT MATCHED THEN 
+                INSERT *
+        """)
+    except Exception as e:
+        print("Merge Failed with Error:",e)
