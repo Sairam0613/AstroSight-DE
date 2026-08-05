@@ -54,7 +54,6 @@ def transform_neo_data():
     else:
         pipeline_audit.end_audit(status='PASSED',request_id=request_id,spark=spark)
     return successful_request_ids
-
 if __name__ == "__main__":
     successful_request_ids = transform_neo_data()
     print(json.dumps(successful_request_ids))

@@ -1,5 +1,4 @@
 from Configs.Spark_Core import session,insertion,tables
-from Spark.Extract import NeoWS_Extract
 from Spark.Transform import Neo_Tarnsformer,Neo_Approach_Transformer,Gst_Kp_Transformer,Gst_Transformer,apod_details_transformer,CME_Transformer,IPS_Transformer
 from Spark.Load import Neo_Rankings_Load,Neo_Summary_Load
 from Spark.Load.DAYN import GST_Rankings_DAYN,GST_Summary_DAYN,Neo_Summary_Load_DAYN,Neo_Rankings_Load_DAYN,CME_Activity_Score_DAYN,CME_SUMMARY_DAYN
