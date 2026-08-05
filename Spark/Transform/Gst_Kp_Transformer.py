@@ -10,6 +10,7 @@ silver_layer = "silver"
 def gst_kp_details():
     spark = session.get_spark_session()
     request_id = pipeline_audit.start_audit(pipeline_stage='BRONZE_TO_SILVER',pipeline_target_table='gst_kp_details',spark=spark)
+    pipeline_failed=False
     session.create_namespaces(spark)
     tables.create_silver_tables(spark)
     successful_request_ids = []
@@ -29,7 +30,7 @@ def gst_kp_details():
                     }]
                     insertion.insert_into_gst_kp_details(payload,spark)
                 successful_request_ids.append(rec["request_id"])
-            pipeline_audit.end_audit(status='PASSED',request_id=request_id,spark=spark)
+            # pipeline_audit.end_audit(status='PASSED',request_id=request_id,spark=spark)
         except Exception as e:
             payload = [{
                 "request_id":rec['request_id'],
@@ -42,8 +43,13 @@ def gst_kp_details():
                 "status":"OPEN"
             }]
             insertion.insert_into_PROCESSING_ERROR_LOG(payload, spark)
-            pipeline_audit.end_audit(status='FAILED',request_id=request_id,spark=spark)
+            pipeline_failed=True
+            # pipeline_audit.end_audit(status='FAILED',request_id=request_id,spark=spark)
             print("job failed with error",e)
+    if pipeline_failed:
+        pipeline_audit.end_audit(status='FAILED',request_id=request_id,spark=spark)
+    else:
+        pipeline_audit.end_audit(status='PASSED',request_id=request_id,spark=spark)
     return successful_request_ids
 
 if __name__ == "__main__":

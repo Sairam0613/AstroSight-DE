@@ -185,3 +185,105 @@ def apod_details_schema():
         StructField("ingestion_timestamp", TimestampType(), True)
     ])
     return schema
+
+def cme_ids_schema():
+    schema = StructType([
+        StructField("cme_id", StringType(), False),
+        StructField("cme_catalog", StringType(), True),
+        StructField("cme_starttime", TimestampType(), True),
+        StructField("cme_sourcelocation", StringType(), True),
+        StructField("cme_submissiontime", TimestampType(), True),
+        StructField("cme_versionid", IntegerType(), True),
+        StructField("cme_note", StringType(), True),
+        StructField("cme_link", StringType(), True),
+        StructField("ingestion_timestamp", TimestampType(), True)
+    ])
+    return schema
+
+def cme_analysis_schema():
+    schema = StructType([
+        StructField("analysis_id", StringType(), False),
+        StructField("cme_id", StringType(), False),
+        StructField("is_most_accurate", BooleanType(), True),
+        StructField("time21_5", TimestampType(), True),
+        StructField("latitude", DoubleType(), True),
+        StructField("longitude", DoubleType(), True),
+        StructField("halfAngle", DoubleType(), True),
+        StructField("speed", DoubleType(), True),
+        StructField("type", StringType(), True),
+        StructField("featureCode", StringType(), True),
+        StructField("imageType", StringType(), True),
+        StructField("measurementTechnique", StringType(), True),
+        StructField("note", StringType(), True),
+        StructField("levelOfData", IntegerType(), True),
+        StructField("tilt", DoubleType(), True),
+        StructField("minorHalfWidth", DoubleType(), True),
+        StructField("speedMeasuredAtHeight", DoubleType(), True),
+        StructField("submissionTime", TimestampType(), True),
+        StructField("link", StringType(), True),
+        StructField("ingestion_timestamp", TimestampType(), True)
+    ])
+    return schema
+
+def cme_instruments_schema():
+    schema = StructType([
+        StructField("instrument_id", StringType(), False),
+        StructField("cme_id", StringType(), False),
+        StructField("instrument_recorded", StringType(), True),
+        StructField("ingestion_timestamp", TimestampType(), True)
+    ])
+    return schema
+
+def cme_activity_score_schema():
+    schema = StructType([
+        StructField("cme_id", StringType(), True),
+        StructField("cme_starttime", TimestampType(), True),
+        StructField("latitude", DoubleType(), True),
+        StructField("longitude", DoubleType(), True),
+        StructField("halfAngle", DoubleType(), True),
+        StructField('time21_5',TimestampType(),True),
+        StructField('speed',DoubleType(),True),
+        StructField("cme_activity_score", DoubleType(), True),
+        StructField("cme_activity_level", StringType(), True),
+        StructField("refresh_timestamp", TimestampType(), True)
+    ])
+    return schema
+
+def cme_summary_schema():
+    schema = StructType([
+        StructField("summary_date", DateType(), True),
+        StructField("total_cme", IntegerType(), True),
+        StructField("max_speed", DoubleType(), True),
+        StructField("max_width", DoubleType(), True),
+        StructField("fast_cme_count", IntegerType(), True),
+        StructField("avg_speed", DoubleType(), True),
+        StructField("halo_cme_count", IntegerType(), True),
+        StructField("multi_instrumental_confirmed", IntegerType(), True),
+        StructField("unique_source_location", StringType(), True),
+        StructField("activity_score", DoubleType(), True),
+        StructField("activity_level", StringType(), True),
+        StructField("refresh_timestamp", TimestampType(), True)
+    ])
+    return schema
+
+def ips_ids_schema():
+    schema = StructType([
+        StructField("ips_id", StringType(), False),
+        StructField("ips_catalog", StringType(), True),
+        StructField("ips_location", StringType(), True),
+        StructField("ips_eventtime", TimestampType(), True),
+        StructField("ips_submissiontime", TimestampType(), True),
+        StructField("ips_versionid", StringType(), True),
+        StructField("ips_link", StringType(), True),
+        StructField("ingestion_timestamp", TimestampType(), True)
+    ])
+    return schema
+
+def ips_instruments_schema():
+    schema = StructType([
+        StructField("ips_instrument_id", StringType(), False),
+        StructField("ips_id", StringType(), True),
+        StructField("instrument_recorded", StringType(), True),
+        StructField('ingestion_timestamp',TimestampType(),True)
+    ])
+    return schema

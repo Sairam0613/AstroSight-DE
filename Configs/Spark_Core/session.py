@@ -27,38 +27,39 @@ def get_environment_config():
 def get_spark_session():
     env = get_environment_config()
     if env=='LOCAL':
-        spark = SparkSession.builder \
-            .appName("AstroSight") \
-            .master("local[2]") \
-            .config("spark.sql.extensions", "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions") \
-            .config("spark.sql.catalog.AstroSight", "org.apache.iceberg.spark.SparkCatalog") \
-            .config("spark.sql.catalog.AstroSight.catalog-impl", "org.apache.iceberg.rest.RESTCatalog") \
-            .config("spark.sql.catalog.AstroSight.uri", "http://astrosight-iceberg-rest:8181") \
-            .config("spark.sql.catalog.AstroSight.warehouse", "/project/Warehouse") \
-            .config("spark.driver.memory", "1g") \
-            .config("spark.executor.memory", "1g") \
-            .config("spark.sql.session.timeZone","Asia/Kolkata") \
-            .getOrCreate()
-        spark.sparkContext.setLogLevel("ERROR")
-        return spark
         # spark = SparkSession.builder \
         #     .appName("AstroSight") \
+        #     .master("local[2]") \
         #     .config("spark.sql.extensions", "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions") \
         #     .config("spark.sql.catalog.AstroSight", "org.apache.iceberg.spark.SparkCatalog") \
-        #     .config("spark.sql.catalog.AstroSight.catalog-impl", "org.apache.iceberg.aws.glue.GlueCatalog") \
-        #     .config("spark.sql.catalog.AstroSight.io-impl", "org.apache.iceberg.aws.s3.S3FileIO") \
-        #     .config("spark.sql.catalog.AstroSight.warehouse", "s3a://astrosight-de-data/warehouse/") \
-        #     .config("spark.hadoop.fs.s3a.aws.credentials.provider","com.amazonaws.auth.profile.ProfileCredentialsProvider") \
-        #     .config("spark.sql.catalog.AstroSight.glue.region","ap-south-1") \
-        #     .config("spark.dynamicAllocation.enabled","false")\
-        #     .config("spark.executor.instances","1")\
-        #     .config("spark.executor.cores","1")\
-        #     .config("spark.driver.memory", "2g") \
-        #     .config("spark.executor.memory", "2g") \
+        #     .config("spark.sql.catalog.AstroSight.catalog-impl", "org.apache.iceberg.rest.RESTCatalog") \
+        #     .config("spark.sql.catalog.AstroSight.uri", "http://astrosight-iceberg-rest:8181") \
+        #     .config("spark.sql.catalog.AstroSight.warehouse", "/project/Warehouse") \
+        #     .config("spark.driver.memory", "1g") \
+        #     .config("spark.executor.memory", "1g") \
+        #     .config("spark.executor.memoryOverhead", "500m") \
         #     .config("spark.sql.session.timeZone","Asia/Kolkata") \
         #     .getOrCreate()
-        # spark.sparkContext.setLogLevel("ERROR")    
+        # spark.sparkContext.setLogLevel("ERROR")
         # return spark
+        spark = SparkSession.builder \
+            .appName("AstroSight") \
+            .config("spark.sql.extensions", "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions") \
+            .config("spark.sql.catalog.AstroSight", "org.apache.iceberg.spark.SparkCatalog") \
+            .config("spark.sql.catalog.AstroSight.catalog-impl", "org.apache.iceberg.aws.glue.GlueCatalog") \
+            .config("spark.sql.catalog.AstroSight.io-impl", "org.apache.iceberg.aws.s3.S3FileIO") \
+            .config("spark.sql.catalog.AstroSight.warehouse", "s3a://astrosight-de-data/warehouse/") \
+            .config("spark.hadoop.fs.s3a.aws.credentials.provider","com.amazonaws.auth.profile.ProfileCredentialsProvider") \
+            .config("spark.sql.catalog.AstroSight.glue.region","ap-south-1") \
+            .config("spark.dynamicAllocation.enabled","false")\
+            .config("spark.executor.instances","1")\
+            .config("spark.executor.cores","1")\
+            .config("spark.driver.memory", "2g") \
+            .config("spark.executor.memory", "2g") \
+            .config("spark.sql.session.timeZone","Asia/Kolkata") \
+            .getOrCreate()
+        spark.sparkContext.setLogLevel("ERROR")    
+        return spark
     elif env=="AWS":
         spark = SparkSession.builder \
             .appName("AstroSight") \
@@ -82,3 +83,4 @@ def create_namespaces(spark):
     spark.sql("CREATE NAMESPACE IF NOT EXISTS AstroSight.bronze")
     spark.sql("CREATE NAMESPACE IF NOT EXISTS AstroSight.silver")
     spark.sql("CREATE NAMESPACE IF NOT EXISTS AstroSight.gold")
+    spark.sql("CREATE NAMESPACE IF NOT EXISTS AstroSight.config")

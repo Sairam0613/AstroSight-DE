@@ -2,6 +2,7 @@ catalog = "AstroSight"
 bronze="bronze"
 silver="silver"
 gold="gold"
+config = "config"
 
 def create_bronze_tables(spark):
     create_sql = f"""
@@ -70,6 +71,7 @@ def create_bronze_tables(spark):
         ingestion_timestamp TIMESTAMP
         )
     """)
+
 
 def create_silver_tables(spark):
     spark.sql(f"""
@@ -152,6 +154,76 @@ def create_silver_tables(spark):
             USING iceberg
         """)
 
+    spark.sql(f"""
+            CREATE TABLE IF NOT EXISTS {catalog}.{silver}.cme_ids
+            (
+                CME_ID                  STRING,
+                CME_Catalog             STRING,
+                CME_StartTime           TIMESTAMP,
+                CME_SourceLocation      STRING,
+                CME_SubmissionTime      TIMESTAMP,
+                CME_versionId           STRING,
+                CME_note                STRING,
+                CME_link                STRING,
+                ingestion_timestamp     TIMESTAMP
+            )
+            USING ICEBERG
+        """)
+    spark.sql(f"""
+            CREATE TABLE IF NOT EXISTS {catalog}.{silver}.cme_analysis
+            (
+                Analysis_Id                 STRING,
+                CME_ID                      STRING,
+                is_most_accurate            BOOLEAN,
+                time21_5                    TIMESTAMP,
+                latitude                    DOUBLE,
+                longitude                   DOUBLE,
+                halfAngle                   DOUBLE,
+                speed                       DOUBLE,
+                type                        STRING,
+                featureCode                 STRING,
+                levelOfData                 STRING,
+                tilt                        DOUBLE,
+                speedMeasuredAtHeight       DOUBLE,
+                submissionTime              TIMESTAMP,
+                ingestion_timestamp         TIMESTAMP
+            )
+            USING ICEBERG
+            """)
+    spark.sql(f"""
+            CREATE TABLE IF NOT EXISTS {catalog}.{silver}.cme_instruments
+            (
+                instrument_id           STRING,
+                cme_id                  STRING,
+                instrument_recorded     STRING,
+                ingestion_timestamp     TIMESTAMP
+            )
+            USING ICEBERG
+                """)
+    # Create the ips_ids table
+    spark.sql(f"""
+            CREATE TABLE IF NOT EXISTS {catalog}.{silver}.ips_ids (
+                ips_id STRING,
+                ips_catalog STRING,
+                ips_location STRING,
+                ips_eventtime TIMESTAMP,
+                ips_submissiontime TIMESTAMP,
+                ips_versionid STRING,
+                ips_link STRING,
+                ingestion_timestamp TIMESTAMP
+            )
+            """)
+
+# Create the cme_instruments table
+    spark.sql(f"""
+            CREATE TABLE IF NOT EXISTS {catalog}.{silver}.ips_instruments (
+                ips_instrument_id STRING,
+                ips_id STRING,
+                instrument_recorded STRING,
+                ingestion_timestamp TIMESTAMP
+            )
+            """)
+
 def create_gold_tables(spark):
     spark.sql(f"""
         CREATE TABLE IF NOT EXISTS {catalog}.{gold}.neo_summary(
@@ -203,3 +275,80 @@ def create_gold_tables(spark):
             refresh_timestamp TIMESTAMP
         )
     """)
+
+    spark.sql(f"""
+        CREATE TABLE IF NOT EXISTS {catalog}.{gold}.cme_activity_score (
+            cme_id STRING,
+            cme_starttime TIMESTAMP,
+            latitude      DOUBLE,
+            longitude     DOUBLE,
+            halfAngle     DOUBLE,
+            time21_5      TIMESTAMP,
+            speed         DOUBLE,
+            cme_activity_score DOUBLE,
+            cme_activity_level STRING,
+            refresh_timestamp TIMESTAMP
+        )
+        USING iceberg
+    """)
+
+    spark.sql(f"""
+        CREATE TABLE IF NOT EXISTS {catalog}.{gold}.cme_summary (
+            summary_date DATE,
+            total_cme INT,
+            max_speed DOUBLE,
+            max_width DOUBLE,
+            fast_cme_count INT,
+            avg_speed DOUBLE,
+            halo_cme_count INT,
+            multi_instrumental_confirmed INT,
+            unique_source_location STRING,
+            activity_score DOUBLE,
+            activity_level STRING,
+            refresh_timestamp TIMESTAMP
+        )
+        USING iceberg
+    """)
+
+def create_config_tables(spark):
+    spark.sql(f"""
+        CREATE TABLE IF NOT EXISTS {catalog}.{config}.api_table_mapping
+        (
+            API_Name             STRING,
+            endpoint_Id          INT,
+            target_namespace     STRING,
+            target_table         STRING,
+            execution_order      INT,
+            root_path            STRING,
+            context              STRING,
+            is_active            STRING,
+            ingestion_timestamp  TIMESTAMP,
+            is_context_array     STRING
+        )
+        USING ICEBERG;
+    """)
+
+    spark.sql(f"""
+        CREATE TABLE IF NOT EXISTS {catalog}.{config}.api_column_mapping
+        (
+            api_name             STRING,
+            target_table         STRING,
+            target_column        STRING,
+            json_source_path     STRING,
+            data_type            STRING,
+            column_order         INT,
+            is_active            STRING,
+            ingestion_timestamp  TIMESTAMP
+        )
+        USING ICEBERG;
+    """)
+    spark.sql(f"""
+            CREATE TABLE IF NOT EXISTS {catalog}.{config}.table_merge_mapping
+            (
+                table_name STRING,
+                table_namespace STRING,
+                merge_fun_name STRING
+            )
+            USING ICEBERG;
+        """)
+

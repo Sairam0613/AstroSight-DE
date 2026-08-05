@@ -2,6 +2,7 @@ import json
 import uuid
 from datetime import datetime
 from Configs.Spark_Core import Schemas,Schema_Validation
+from pyspark.sql.functions import current_timestamp
 
 iceberg_catalog = "AstroSight"
 bronze="bronze"
@@ -67,14 +68,18 @@ def insert_into_PROCESSING_ERROR_LOG(payload,spark):
     df.writeTo(f"{iceberg_catalog}.{bronze}.processing_error_log").append()
 
 def Update_api_response_status(request_id,spark):
-    print(f"Updating API response status to Y for request ids : {request_id}")
-    ids = ",".join([f"'{id}'" for id in request_id])
-    spark.sql(f"""
-        UPDATE {iceberg_catalog}.{bronze}.api_response
-        SET refreshed_to_silver = 'Y',
-        refreshed_timestamp = current_timestamp()
-        WHERE request_id in ({ids})
-    """)
+    try:
+        if request_id:
+            print(f"Updating API response status to Y for request ids : {request_id}")
+            ids = ",".join([f"'{id}'" for id in request_id])
+            spark.sql(f"""
+                UPDATE {iceberg_catalog}.{bronze}.api_response
+                SET refreshed_to_silver = 'Y',
+                refreshed_timestamp = current_timestamp()
+                WHERE request_id in ({ids})
+            """)
+    except Exception as e:
+        print("Update API response merge failed with error:",e)
 
 def Mark_api_response_as_failed(request_id,spark):
     print(f"Updating API response status to P for request ids : {request_id}")
@@ -217,3 +222,228 @@ def merge_into_apod_details(spark,payload):
         """)
     except Exception as e:
         print("Merge Failed with Error:",e)
+
+def merge_into_cme_ids(payload,spark):
+    try:
+        print("Starting Merge for CME_IDS")
+        schema = Schemas.cme_ids_schema()
+        df = spark.createDataFrame(payload,schema)
+        df = df.withColumn(
+            "ingestion_timestamp",
+            current_timestamp()
+        )
+        df.createOrReplaceTempView("cme_ids")
+        spark.sql(f"""
+            MERGE INTO {iceberg_catalog}.{silver_layer}.cme_ids AS target
+            USING cme_ids AS source
+            ON target.cme_id = source.cme_id
+
+            WHEN MATCHED THEN
+            UPDATE SET
+                cme_catalog = source.cme_catalog,
+                cme_starttime = source.cme_starttime,
+                cme_sourcelocation = source.cme_sourcelocation,
+                cme_submissiontime = source.cme_submissiontime,
+                cme_versionid = source.cme_versionid,
+                cme_note = source.cme_note,
+                cme_link = source.cme_link,
+                ingestion_timestamp = source.ingestion_timestamp
+            WHEN NOT MATCHED THEN
+            INSERT *
+        """)
+        print("Merge Completed for CME_IDS")
+    except Exception as e:
+            print("Merge Failed with Error for CME_IDS:",e)
+
+def merge_into_cme_analysis(payload,spark):
+    try:
+        print("MERGE STARTED FOR CME_ANALYSIS")
+        schema = Schemas.cme_analysis_schema()
+        df = spark.createDataFrame(payload,schema)
+        df = df.withColumn(
+            "ingestion_timestamp",
+            current_timestamp()
+        )
+        df.createOrReplaceTempView("cme_analysis")
+        spark.sql(f"""
+            MERGE INTO {iceberg_catalog}.{silver_layer}.cme_analysis AS target
+            USING cme_analysis AS source
+            ON target.cme_id = source.cme_id and target.time21_5 = source.time21_5 and target.submissionTime = source.submissionTime
+
+            WHEN MATCHED THEN
+            UPDATE SET
+                is_most_accurate = source.is_most_accurate,
+                latitude = source.latitude,
+                longitude = source.longitude,
+                halfAngle = source.halfAngle,
+                speed = source.speed,
+                type = source.type,
+                featureCode = source.featureCode,
+                levelOfData = source.levelOfData,
+                tilt = source.tilt,
+                speedMeasuredAtHeight = source.speedMeasuredAtHeight,
+                submissionTime = source.submissionTime,
+                ingestion_timestamp = source.ingestion_timestamp
+
+            WHEN NOT MATCHED THEN
+            INSERT *
+        """)
+        print('MERGE COMPLETED FOR CME_ANALYSIS')
+    except Exception as e:
+            print("Merge Failed for CME_ANALYSIS with Error:",e)
+
+def merge_into_cme_instruments(payload,spark):
+    try:
+        print("MERGE STARTED FOR CME_INSTRUMENTS")
+        schema = Schemas.cme_instruments_schema()
+        df = spark.createDataFrame(payload,schema)
+        df = df.withColumn(
+            "ingestion_timestamp",
+            current_timestamp()
+        )
+        df.createOrReplaceTempView("cme_instruments")
+        spark.sql(f"""
+            MERGE INTO {iceberg_catalog}.{silver_layer}.cme_instruments AS target
+            USING cme_instruments AS source
+            ON target.cme_id = source.cme_id
+            AND target.instrument_recorded = source.instrument_recorded
+
+            WHEN MATCHED THEN
+            UPDATE SET
+                ingestion_timestamp = source.ingestion_timestamp
+            WHEN NOT MATCHED THEN
+            INSERT *
+        """)
+        print("MERGE COMPLETED FOR CME_INSTRUMENTS")
+    except Exception as e:
+            print("Merge Failed for CME_INSTRUMENTS with Error:",e)
+
+def merge_into_cme_activity_score(df,spark):
+    try:
+        schema = Schemas.cme_activity_score_schema()
+        df = df.withColumn(
+                            "refresh_timestamp",
+                            current_timestamp()
+                        )
+        df = Schema_Validation.validate_and_cast_schema(df, schema)
+        df.createOrReplaceTempView("cme_activity_score")
+        spark.sql(f"""
+            MERGE INTO {iceberg_catalog}.{gold_layer}.cme_activity_score t
+            USING cme_activity_score s
+            ON t.cme_id = s.cme_id
+            WHEN MATCHED THEN 
+                UPDATE SET *
+            WHEN NOT MATCHED THEN 
+                INSERT *
+            """)
+    except Exception as e:
+        print("Merge For CME_ACTIVITY_SCORE failed with error:",e)
+
+def merge_into_cme_summary(df,spark):
+    try:
+        schema = Schemas.cme_summary_schema()
+        df = df.withColumn(
+                            "refresh_timestamp",
+                            current_timestamp()
+                        )
+        df = Schema_Validation.validate_and_cast_schema(df, schema)
+        df.createOrReplaceTempView("cme_summary")
+        spark.sql(f"""
+            MERGE INTO {iceberg_catalog}.{gold_layer}.cme_summary t
+            USING cme_summary s
+            ON t.summary_date = s.summary_date
+            WHEN MATCHED THEN 
+                UPDATE SET *
+            WHEN NOT MATCHED THEN 
+                INSERT *
+        """)
+
+    except Exception as e:
+        print("Merge Failed for CME_SUMMARY with error",e)
+
+def merge_into_ips_ids(payload,spark):
+    try:
+        print("MERGE STARTED FOR IPS_IDS")
+        schema = Schemas.ips_ids_schema()
+        df = spark.createDataFrame(payload,schema)
+        df = df.withColumn(
+            "ingestion_timestamp",
+            current_timestamp()
+        )
+        df.createOrReplaceTempView("ips_ids")
+        spark.sql(f"""
+            MERGE INTO {iceberg_catalog}.{silver_layer}.ips_ids AS target
+            USING ips_ids AS source
+            ON target.ips_id = source.ips_id
+            WHEN MATCHED THEN
+            UPDATE SET
+                target.ips_catalog        = source.ips_catalog,
+                target.ips_location       = source.ips_location,
+                target.ips_eventtime      = source.ips_eventtime,
+                target.ips_submissiontime = source.ips_submissiontime,
+                target.ips_versionid      = source.ips_versionid,
+                target.ips_link           = source.ips_link,
+                target.ingestion_timestamp = source.ingestion_timestamp
+            WHEN NOT MATCHED THEN
+            INSERT (
+                ips_id,
+                ips_catalog,
+                ips_location,
+                ips_eventtime,
+                ips_submissiontime,
+                ips_versionid,
+                ips_link,
+                ingestion_timestamp
+            )
+            VALUES (
+                source.ips_id,
+                source.ips_catalog,
+                source.ips_location,
+                source.ips_eventtime,
+                source.ips_submissiontime,
+                source.ips_versionid,
+                source.ips_link,
+                source.ingestion_timestamp
+            )
+        """)
+        print("MERGE COMPLETED FOR IPS_IDS")
+    except Exception as e:
+            print("Merge Failed for IPS_IDS with Error:",e)
+
+
+def merge_into_ips_instruments(payload,spark):
+    try:
+        print("MERGE STARTED FOR IPS_INSTRUMENTS")
+        schema = Schemas.ips_instruments_schema()
+        df = spark.createDataFrame(payload,schema)
+        df = df.withColumn(
+            "ingestion_timestamp",
+            current_timestamp()
+        )
+        df.createOrReplaceTempView("ips_instruments")
+        spark.sql(f"""
+            MERGE INTO {iceberg_catalog}.{silver_layer}.ips_instruments AS target
+            USING ips_instruments AS source
+            ON target.ips_id = source.ips_id 
+            AND target.instrument_recorded = source.instrument_recorded
+            WHEN MATCHED THEN
+            UPDATE SET
+                target.ips_instrument_id = source.ips_instrument_id,
+                target.ingestion_timestamp = source.ingestion_timestamp
+            WHEN NOT MATCHED THEN
+            INSERT (
+                ips_instrument_id,
+                ips_id,
+                instrument_recorded,
+                ingestion_timestamp
+            )
+            VALUES (
+                source.ips_instrument_id,
+                source.ips_id,
+                source.instrument_recorded,
+                source.ingestion_timestamp
+            )
+        """)
+        print("MERGE COMPLETED FOR IPS_INSTRUMENTS")
+    except Exception as e:
+            print("Merge Failed for IPS_INSTRUMENTS with Error:",e)

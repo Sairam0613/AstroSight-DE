@@ -15,7 +15,7 @@ with DAG(
     default_args=default_args,
     description="Master DAG for AstroSight",
     start_date=datetime(2026, 1, 1),
-    schedule_interval="30 8 * * *",
+    schedule_interval="30 8,23 * * *",
     catchup=False,
     max_active_runs=1,
     tags=["AstroSight", "Master"]
@@ -54,9 +54,30 @@ with DAG(
         allowed_states = ['success'],
         failed_states = ['failed']
     )
+
+    cme_pipeline = TriggerDagRunOperator(
+            task_id = "trigger_cme_pipeline",
+            trigger_dag_id = "CME_pipeline",
+            wait_for_completion=True,
+            poke_interval = 30,
+            reset_dag_run = True,
+            allowed_states = ['success'],
+            failed_states = ['failed']
+        )
+
+    IPS_pipeline = TriggerDagRunOperator(
+                task_id = "trigger_IPS_pipeline",
+                trigger_dag_id = "IPS_pipeline",
+                wait_for_completion=True,
+                poke_interval = 30,
+                reset_dag_run = True,
+                allowed_states = ['success'],
+                failed_states = ['failed']
+            )
+
     
     end = EmptyOperator(
         task_id="end"
     )
 
-    start >>  neo_pipeline >> gst_pipeline >> apod_pipeline >> end
+    start >>  neo_pipeline >> gst_pipeline >> apod_pipeline >> cme_pipeline >> IPS_pipeline >> end
