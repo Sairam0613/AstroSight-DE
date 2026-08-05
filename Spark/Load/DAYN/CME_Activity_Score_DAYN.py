@@ -97,7 +97,6 @@ def cme_activity_score_DAYN():
         """)
     insertion.merge_into_cme_activity_score(df=df,spark=spark)
     pipeline_audit.end_audit(status='PASSED',request_id=request_id,spark=spark)
-    spark.stop()
 
 if __name__ == "__main__":
     cme_activity_score_DAYN()
