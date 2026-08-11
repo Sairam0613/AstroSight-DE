@@ -6,6 +6,8 @@ from Configs.Spark_Core import session,insertion
 
 def update_API_status():
     spark = session.get_spark_session()
+    import sys
+    import json
     
     all_request_ids = []
     for arg in sys.argv[1:]:

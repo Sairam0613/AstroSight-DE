@@ -113,7 +113,7 @@ def create_silver_tables(spark):
             version_id INT,
             ingestion_timestamp TIMESTAMP
             )
-            USING iceberg
+            
         """)
     spark.sql(f"""
             CREATE TABLE IF NOT EXISTS {catalog}.{silver}.gst_kp_details (
@@ -124,7 +124,7 @@ def create_silver_tables(spark):
             kp_source STRING,
             ingestion_timestamp TIMESTAMP
             )
-            USING iceberg
+            
         """)
     spark.sql(f"""
             CREATE TABLE IF NOT EXISTS {catalog}.{silver}.linked_events (
@@ -135,7 +135,7 @@ def create_silver_tables(spark):
             activity_type STRING,
             ingestion_timestamp TIMESTAMP
             )
-        USING iceberg
+        
         """)
     
     spark.sql(f"""
@@ -151,7 +151,7 @@ def create_silver_tables(spark):
             apod_service_version STRING,
             ingestion_timestamp TIMESTAMP
             )
-            USING iceberg
+            
         """)
 
     spark.sql(f"""
@@ -167,7 +167,7 @@ def create_silver_tables(spark):
                 CME_link                STRING,
                 ingestion_timestamp     TIMESTAMP
             )
-            USING ICEBERG
+            
         """)
     spark.sql(f"""
             CREATE TABLE IF NOT EXISTS {catalog}.{silver}.cme_analysis
@@ -188,7 +188,7 @@ def create_silver_tables(spark):
                 submissionTime              TIMESTAMP,
                 ingestion_timestamp         TIMESTAMP
             )
-            USING ICEBERG
+            
             """)
     spark.sql(f"""
             CREATE TABLE IF NOT EXISTS {catalog}.{silver}.cme_instruments
@@ -198,7 +198,7 @@ def create_silver_tables(spark):
                 instrument_recorded     STRING,
                 ingestion_timestamp     TIMESTAMP
             )
-            USING ICEBERG
+            
                 """)
     # Create the ips_ids table
     spark.sql(f"""
@@ -289,7 +289,7 @@ def create_gold_tables(spark):
             cme_activity_level STRING,
             refresh_timestamp TIMESTAMP
         )
-        USING iceberg
+        
     """)
 
     spark.sql(f"""
@@ -307,7 +307,7 @@ def create_gold_tables(spark):
             activity_level STRING,
             refresh_timestamp TIMESTAMP
         )
-        USING iceberg
+        
     """)
 
 def create_config_tables(spark):
@@ -325,7 +325,7 @@ def create_config_tables(spark):
             ingestion_timestamp  TIMESTAMP,
             is_context_array     STRING
         )
-        USING ICEBERG;
+        ;
     """)
 
     spark.sql(f"""
@@ -340,7 +340,7 @@ def create_config_tables(spark):
             is_active            STRING,
             ingestion_timestamp  TIMESTAMP
         )
-        USING ICEBERG;
+        ;
     """)
     spark.sql(f"""
             CREATE TABLE IF NOT EXISTS {catalog}.{config}.table_merge_mapping
@@ -349,6 +349,6 @@ def create_config_tables(spark):
                 table_namespace STRING,
                 merge_fun_name STRING
             )
-            USING ICEBERG;
+            ;
         """)
 

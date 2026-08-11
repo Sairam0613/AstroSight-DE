@@ -82,14 +82,14 @@ def IPS(spark):
 spark=session.get_spark_session()
 # tables.create_bronze_tables(spark)
 # spark=S3_TO_Bronze.get_spark()
-S3_TO_Bronze.Load_to_bronze(spark=spark)
-Neo(spark)
-GST(spark)
-APOD(spark)
-CME(spark=spark)
-IPS(spark=spark)
+# S3_TO_Bronze.Load_to_bronze(spark=spark)
+# Neo(spark)
+# GST(spark)
+# APOD(spark)
+# CME(spark=spark)
+# IPS(spark=spark)
 
-
+spark.sql("SHOW CATALOGS").show()
 
 
 spark.stop()

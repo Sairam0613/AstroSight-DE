@@ -19,6 +19,8 @@ def get_environment_config():
     """
     if os.getenv("PLATFORM_TYPE")=="EMR_SERVERLESS":
         return "AWS"
+    elif os.getenv("DB_HOME")=="/databricks":
+        return "DATABRICKS"
     else :
         return "LOCAL"
 
@@ -77,8 +79,16 @@ def get_spark_session():
             .config("spark.sql.session.timeZone","Asia/Kolkata") \
             .getOrCreate()
         spark.sparkContext.setLogLevel("ERROR")    
-        return spark    
-
+        return spark
+    elif env=="DATABRICKS":
+        spark = SparkSession.builder \
+            .appName("AstroSight") \
+            .getOrCreate()
+        spark.sql("""
+            CREATE CATALOG IF NOT EXISTS AstroSight
+            MANAGED LOCATION 's3://astrosight-databricks/warehouse'
+            """)
+        return spark
 def create_namespaces(spark):
     spark.sql("CREATE NAMESPACE IF NOT EXISTS AstroSight.bronze")
     spark.sql("CREATE NAMESPACE IF NOT EXISTS AstroSight.silver")

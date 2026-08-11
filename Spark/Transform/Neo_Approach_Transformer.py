@@ -61,3 +61,12 @@ def transform_neo_close_data():
 if __name__ == "__main__":
     successful_request_ids = transform_neo_close_data()
     print(json.dumps(successful_request_ids))
+    import sys
+    if 'PLATFORM_TYPE' in sys.argv:
+        platform_type = sys.argv[sys.argv.index('PLATFORM_TYPE')+1]
+        print("Setting Task Value:",successful_request_ids)
+        if platform_type=='DATABRICKS':
+            dbutils.jobs.taskValues.set(
+                key="successful_request_ids",
+                value = successful_request_ids
+            )
