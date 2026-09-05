@@ -366,7 +366,8 @@ Generic PySpark Transformation
 ```
 For a new API, the same transformation framework can be reused by adding the required metadata configuration instead of writing new API-specific transformation logic.
 
-🔎 Implementation
+###🔎 Implementation
+
 The metadata-driven transformation approach is implemented in the following Spark transformation modules:
 
 Spark/Transform/CME_Transformer.py
@@ -374,11 +375,13 @@ Spark/Transform/IPS_Transformer.py
 
 These transformers use the metadata configuration to dynamically extract and map API response fields rather than relying on API-specific hardcoded transformation logic.
 
-👉 Explore the implementation:
+###👉 Explore the implementation:
+
 Spark/Transform/CME_Transformer.py
 Spark/Transform/IPS_Transformer.py
 
-📈 Impact
+###📈 Impact
+
 This approach reduced new API onboarding time from approximately 2 days to less than half a day, while making the transformation framework:
 ✅ Reusable
 ✅ Configuration-driven
