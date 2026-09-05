@@ -328,3 +328,62 @@ Why?
 Alternative Considered: API extraction within EMR Spark jobs.
 
 Reason for Rejection: Spark startup overhead is unnecessary for lightweight API requests.
+
+## ⚙️ Metadata-Driven Architecture
+One of the key design improvements in AstroSight is the metadata-driven transformation framework.
+
+### Problem
+Initially, onboarding a new API required writing API-specific transformation code to extract JSON fields and map them to Silver-layer tables.
+
+This made onboarding a new API take around **2 days**.
+
+### Solution
+AstroSight uses a **metadata-driven transformation framework** to define the mapping between API JSON responses and Silver-layer tables.
+
+The metadata stores information such as:
+- Target table name
+- Target column name
+- Column position/order
+- JSON extraction syntax/path
+
+A reusable PySpark transformation framework reads this metadata and dynamically extracts the required fields from the Bronze API responses before loading them into the appropriate Silver tables.
+
+### Workflow
+```text
+API Response
+     ↓
+   Bronze
+     ↓
+ Read Metadata
+     ↓
+Generic PySpark Transformation
+     ↓
+ Dynamic JSON Extraction
+     ↓
+ Column Mapping
+     ↓
+   Silver
+
+For a new API, the same transformation framework can be reused by adding the required metadata configuration instead of writing new API-specific transformation logic.
+
+🔎 Implementation
+The metadata-driven transformation approach is implemented in the following Spark transformation modules:
+
+Spark/Transform/CME_Transformer.py
+Spark/Transform/IPS_Transformer.py
+
+These transformers use the metadata configuration to dynamically extract and map API response fields rather than relying on API-specific hardcoded transformation logic.
+
+👉 Explore the implementation:
+Spark/Transform/CME_Transformer.py
+Spark/Transform/IPS_Transformer.py
+
+📈 Impact
+This approach reduced new API onboarding time from approximately 2 days to less than half a day, while making the transformation framework:
+✅ Reusable
+✅ Configuration-driven
+✅ Easier to maintain
+✅ Faster to extend
+✅ Less dependent on API-specific transformation code
+
+This was a good reminder that data engineering isn't only about building pipelines — it's also about designing them so that the next pipeline doesn't require writing everything from scratch.
