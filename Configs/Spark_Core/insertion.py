@@ -2,7 +2,8 @@ import json
 import uuid
 from datetime import datetime
 from Configs.Spark_Core import Schemas,Schema_Validation
-from pyspark.sql.functions import current_timestamp
+from pyspark.sql.functions import current_timestamp,lit
+import json
 
 iceberg_catalog = "AstroSight"
 bronze="bronze"
@@ -15,7 +16,7 @@ def insert_into_api_response(payload,spark):
         "request_id":str(uuid.uuid4()),
         "URL_Endpoint": payload["URL_Endpoint"],
         "API_Request_Type": payload["API_Request_Type"],
-        "Request_Params": payload["URL_Endpoint"].split("?")[1] if "?" in payload["URL_Endpoint"] else None,
+        "Request_Params": json.dumps(payload['Request_Params']),
         "Entity_Requested": payload["Entity_Requested"],
         "Raw_Api_Response": json.dumps(payload["Raw_Api_Response"]),
         "Response_status": payload["Response_status"],
@@ -26,8 +27,17 @@ def insert_into_api_response(payload,spark):
     }]
     schema = Schemas.Bronze_api_response_schema()
     df = spark.createDataFrame(data,schema=schema)
-    print("Inserting API response into Bronze layer")
-    df.writeTo(f"{iceberg_catalog}.{bronze}.api_response").append()
+    df.createOrReplaceTempView("new_api_resp")
+    print("Merge API response into Bronze layer")
+    # df.writeTo(f"{iceberg_catalog}.{bronze}.api_response").append()
+    spark.sql(f"""MERGE INTO {iceberg_catalog}.{bronze}.api_response TGT
+                  USING new_api_resp AS SRC 
+                  ON TGT.API_Request_Type=SRC.API_Request_Type
+                  AND TGT.Request_Params=SRC.Request_Params
+                  AND TGT.Response_status=SRC.Response_status
+                  WHEN MATCHED THEN UPDATE SET *
+                  WHEN NOT MATCHED THEN INSERT *
+                """)
 
 def merge_into_neo_objects(payload,spark):
     try:
@@ -447,3 +457,39 @@ def merge_into_ips_instruments(payload,spark):
         print("MERGE COMPLETED FOR IPS_INSTRUMENTS")
     except Exception as e:
             print("Merge Failed for IPS_INSTRUMENTS with Error:",e)
+
+def merge_into_api_backfill_control(df,spark):
+    try:
+        schema = Schemas.api_backfill_control_schema()
+        df = Schema_Validation.validate_and_cast_schema(df, schema)
+        df = df.withColumn("last_checked",lit(None))
+        df.createOrReplaceTempView("api_control")
+        spark.sql(f"""
+            MERGE INTO {iceberg_catalog}.{bronze}.api_backfill_control t
+            USING api_control s
+            ON t.processed_date = s.processed_date
+            WHEN MATCHED THEN 
+                UPDATE SET *
+            WHEN NOT MATCHED THEN 
+                INSERT *
+        """)
+    
+    except Exception as e:
+        print("Merge Failed for API_BACKFILL_CONTROL with error",e)
+
+def merge_into_api_backfill_control_historical(df,spark):
+    try:
+        schema = Schemas.api_backfill_control_schema()
+        df = Schema_Validation.validate_and_cast_schema(df, schema)
+        df = df.withColumn("last_checked",lit(None))
+        df.createOrReplaceTempView("api_control")
+        spark.sql(f"""
+            MERGE INTO {iceberg_catalog}.{bronze}.api_backfill_control t
+            USING api_control s
+            ON t.processed_date = s.processed_date
+            WHEN NOT MATCHED THEN 
+                INSERT *
+        """)
+    
+    except Exception as e:
+        print("Merge Failed for API_BACKFILL_CONTROL with error",e)

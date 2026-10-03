@@ -89,7 +89,69 @@ spark=session.get_spark_session()
 # CME(spark=spark)
 # IPS(spark=spark)
 
-spark.sql("SHOW CATALOGS").show()
+# tables.create_bronze_tables(spark=spark)
 
+# spark.sql("SHOW TABLES IN AstroSight.bronze").show()
+
+
+
+
+
+# spark.sql("""DELETE FROM  AstroSight.bronze.api_response t where request_id in ('1c54673c-a5e9-4a94-90ea-a31cd8f040b7',
+# 'c5b2f492-0b3f-49e7-9f5c-0a70f2b55959',
+# '09e80f97-2620-41d3-a629-ff1fec2200d7',
+# '5893beaa-7001-4590-bff8-0163a4b7eadd',
+# '09099967-df99-4a20-b68e-27b21f761637',
+# 'e3be7fca-6cf7-46a9-80b9-55b4656a6683',
+# 'f5eb3e93-b1b6-4031-839d-b8194c2eab1b',
+# 'dd7b4ea1-2cad-4bf4-a795-b2f2318590df',
+# 'c6a6e802-5f1d-4cc6-a553-c6f5933b4bf1',
+# '1e6d22e6-0e78-4552-bdf3-ba1ca64f33ba',
+# '7165f1d4-16f0-499e-8837-74110cc53876',
+# '8118e8af-f06a-4e2f-8534-daed9bc79296')""")
+
+
+# spark.sql("UPDATE AstroSight.bronze.api_response set refreshed_to_silver='N' where refreshed_to_silver='P' and  API_Request_Type='gst'")
+
+# spark.sql("SELECT request_id,ingestion_timestamp,Request_Params,Entity_Requested,refreshed_to_silver,ingestion_timestamp FROM AstroSight.bronze.api_response t where t.refreshed_to_silver='N'").show(20,truncate=False)
+
+# spark.sql("SELECT * from AstroSight.bronze.api_backfill_control ").show()
+
+# spark.sql("SELECT * FROM AstroSight.bronze.api_endpoints").show()
+
+spark.sql("DELETE FROM AstroSight.bronze.api_backfill_control where processed_date=DATE('2026-09-27')")
+
+spark.sql("""
+    INSERT INTO AstroSight.bronze.api_backfill_control 
+    VALUES (
+        date '2026-09-27', 
+        5, 
+        0, 
+        array('neo', 'IPS', 'gst', 'cme', 'apod'), 
+        CURRENT_TIMESTAMP(), 
+        CURRENT_TIMESTAMP(),
+        Null
+    )
+""")
+
+
+# spark.sql("ALTER TABLE AstroSight.bronze.api_backfill_control add columns (last_checked TIMESTAMP)")
+
+# spark.sql("TRUNCATE TABLE AstroSight.bronze.api_backfill_control")
+
+spark.sql("SELECT * from AstroSight.bronze.api_backfill_control order by 1 desc").show(20)
+
+# spark.sql("SELECT URL_Endpoint,API_Request_Type,Request_Params,Entity_Requested from AstroSight.bronze.api_response ").show(truncate=False)
+
+# spark.sql("SELECT * from AstroSight.bronze.api_response where API_Request_Type='gst' and refreshed_to_silver='P'").show(50,truncate=False)
+
+# spark.sql(f"""
+# SELECT DISTINCT (CAST(substr(request_params,17,10) AS DATE)) AS processed_date,request_id
+# 		,api_request_type,request_params,refreshed_timestamp
+# 		,ingestion_timestamp,response_status,refreshed_to_silver
+# 	FROM AstroSight.bronze.api_response where request_params is not null and CAST(substr(request_params,17,10) AS DATE)=DATE('2026-08-31')
+# """).show()
+
+# spark.sql("update AstroSight.bronze.api_response set refreshed_to_silver='Y',refreshed_timestamp=current_timestamp() where request_id='66610e5d-8d11-4b77-95bf-1ed54dc1f810'")
 
 spark.stop()

@@ -11,8 +11,6 @@ def gst_kp_details():
     spark = session.get_spark_session()
     request_id = pipeline_audit.start_audit(pipeline_stage='BRONZE_TO_SILVER',pipeline_target_table='gst_kp_details',spark=spark)
     pipeline_failed=False
-    session.create_namespaces(spark)
-    tables.create_silver_tables(spark)
     successful_request_ids = []
     required_df = (spark.table(f"{iceberg_catalog}.{bronze_layer}.api_response")
           .filter((col("API_Request_Type")=="gst")&(col("refreshed_to_silver")=="N")&(col("Response_status")==200)))
@@ -29,7 +27,7 @@ def gst_kp_details():
                         "ingestion_timestamp":datetime.now()
                     }]
                     insertion.insert_into_gst_kp_details(payload,spark)
-                successful_request_ids.append(rec["request_id"])
+            successful_request_ids.append(rec["request_id"])
             # pipeline_audit.end_audit(status='PASSED',request_id=request_id,spark=spark)
         except Exception as e:
             payload = [{

@@ -71,6 +71,17 @@ def create_bronze_tables(spark):
         ingestion_timestamp TIMESTAMP
         )
     """)
+    spark.sql(f"""
+        CREATE TABLE IF NOT EXISTS {catalog}.{bronze}.api_backfill_control (
+            processed_date DATE,
+            total_active_api BIGINT,
+            processed_apis_count BIGINT,
+            missing_apis ARRAY<STRING>,
+            last_ingestion TIMESTAMP,
+            last_updated TIMESTAMP,
+            last_checked TIMESTAMP
+            )
+    """)
 
 
 def create_silver_tables(spark):

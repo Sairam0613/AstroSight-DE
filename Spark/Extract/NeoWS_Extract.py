@@ -14,14 +14,15 @@ def execute_scheduled_requests():
           .filter(col("api_name")=="NASA")
     for row in df.collect():
         try:
-            data = Resolve_Params.resolve_params(row['request_params'])
+            req_params = Resolve_Params.resolve_params(row['request_params'])
             endpoint_url = row['endpoint_url']
-            data,status = API_HIT.get_url_response(endpoint_url,data)
+            data,status = API_HIT.get_url_response(endpoint_url,req_params)
             if status == 200:
                 payload = {
                     "URL_Endpoint": endpoint_url,
                     "API_Request_Type": row['endpoint_name'],
                     "Entity_Requested": row['endpoint_name'],
+                    "Request_Params":req_params,
                     "Raw_Api_Response": data,
                     "Response_status": status,
                     "error_msg": None
@@ -31,6 +32,7 @@ def execute_scheduled_requests():
                     "URL_Endpoint": endpoint_url,
                     "API_Request_Type": row['endpoint_name'],
                     "Entity_Requested": row['endpoint_name'],
+                    "Request_Params":req_params,
                     "Raw_Api_Response": None,
                     "Response_status": status,
                     "error_msg": data

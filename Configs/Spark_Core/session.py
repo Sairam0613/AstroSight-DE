@@ -37,8 +37,8 @@ def get_spark_session():
             .config("spark.sql.catalog.AstroSight.catalog-impl", "org.apache.iceberg.rest.RESTCatalog") \
             .config("spark.sql.catalog.AstroSight.uri", "http://astrosight-iceberg-rest:8181") \
             .config("spark.sql.catalog.AstroSight.warehouse", "/project/Warehouse") \
-            .config("spark.driver.memory", "1g") \
-            .config("spark.executor.memory", "1g") \
+            .config("spark.driver.memory", "2g") \
+            .config("spark.executor.memory", "2g") \
             .config("spark.executor.memoryOverhead", "500m") \
             .config("spark.sql.session.timeZone","Asia/Kolkata") \
             .getOrCreate()

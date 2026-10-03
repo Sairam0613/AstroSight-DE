@@ -364,6 +364,7 @@ Generic PySpark Transformation
      ↓
    Silver
 
+
 For a new API, the same transformation framework can be reused by adding the required metadata configuration instead of writing new API-specific transformation logic.
 
 🔎 Implementation

@@ -1,4 +1,4 @@
-from pyspark.sql.types import StructType, StructField, StringType, IntegerType, TimestampType,DoubleType,BooleanType,DateType,LongType
+from pyspark.sql.types import StructType, StructField, StringType, IntegerType, TimestampType,DoubleType,BooleanType,DateType,LongType,ArrayType
 
 
 def Bronze_api_response_schema():
@@ -286,4 +286,16 @@ def ips_instruments_schema():
         StructField("instrument_recorded", StringType(), True),
         StructField('ingestion_timestamp',TimestampType(),True)
     ])
+    return schema
+
+def api_backfill_control_schema():
+    schema = StructType([
+        StructField("processed_date",DateType(),False),
+        StructField("total_active_api",LongType(),False),
+        StructField("processed_apis_count",LongType(),False),
+        StructField("missing_apis",ArrayType(StringType()),False),
+        StructField("last_ingestion",TimestampType(),False),
+        StructField("last_updated",TimestampType(),False)
+    ])
+
     return schema
