@@ -12,7 +12,7 @@ import json
 
 def backfill_missing_apis():
     spark = session.get_spark_session()
-    # request_id = pipeline_audit.start_audit(pipeline_stage='BACKFILL_MISSING_API',pipeline_target_table='api_response',spark=spark)
+    request_id = pipeline_audit.start_audit(pipeline_stage='BACKFILL_MISSING_API',pipeline_target_table='api_response',spark=spark)
     df_api = spark.table(f"{iceberg_catalog}.{bronze}.api_endpoints")\
               .filter(col("endpoint_type")=="scheduled")\
               .filter(col("is_active")=="Y")\
@@ -58,11 +58,11 @@ def backfill_missing_apis():
                         "error_msg": data
                     }
                 # print(payload)
-                # insertion.insert_into_api_response(payload,spark)
-                # pipeline_audit.end_audit(status='PASSED',request_id=request_id,spark=spark)
+                insertion.insert_into_api_response(payload,spark)
+                pipeline_audit.end_audit(status='PASSED',request_id=request_id,spark=spark)
     except Exception as e:
         print(f"Job Failed with error {e}")
-        # pipeline_audit.end_audit(status='FAILED',request_id=request_id,spark=spark)
+        pipeline_audit.end_audit(status='FAILED',request_id=request_id,spark=spark)
 
 
 def Historical_Data():
@@ -104,21 +104,58 @@ def Historical_Data():
 
 def CDC_Check():
     spark = session.get_spark_session()
-    # request_id = pipeline_audit.start_audit(pipeline_stage='CDC_CHECK',pipeline_target_table='api_response',spark=spark)
-    df_cont = spark.table(f"{iceberg_catalog}.{bronze}.api_backfill_control").filter(((col("last_checked").isNull())|(col("last_checked")<=col("last_updated")))&(col("missing_apis").isNull())).select("processed_date","last_checked")
-    df_resp = spark.table(f"{iceberg_catalog}.{bronze}.api_response").filter((col("Request_Params").isNotNull())&(col("refreshed_to_silver")=="Y")).withColumn("processed_date",to_date(col("Request_Params").substr(17, 10))).select("processed_date","API_Request_Type","Raw_Api_Response","refreshed_timestamp","Request_Params","URL_Endpoint")
+    request_id = pipeline_audit.start_audit(pipeline_stage='CDC_CHECK',pipeline_target_table='api_response',spark=spark)
+    try:
+        df_cont = spark.table(f"{iceberg_catalog}.{bronze}.api_backfill_control").filter(((col("last_checked").isNull())|(col("last_checked")<=col("last_updated")))&(col("missing_apis").isNull())).select("processed_date","last_checked")
+        df_resp = spark.table(f"{iceberg_catalog}.{bronze}.api_response").filter((col("Request_Params").isNotNull())&(col("refreshed_to_silver")=="Y")).withColumn("processed_date",to_date(col("Request_Params").substr(17, 10))).select("processed_date","API_Request_Type","Raw_Api_Response","refreshed_timestamp","Request_Params","URL_Endpoint")
 
-    df_new = df_cont.join(df_resp,"processed_date")
-    window_spec = Window.partitionBy("processed_date","API_Request_Type").orderBy(col("refreshed_timestamp").desc())
+        df_new = df_cont.join(df_resp,"processed_date")
+        window_spec = Window.partitionBy("processed_date","API_Request_Type").orderBy(col("refreshed_timestamp").desc())
 
-    df_latest = df_new.filter(col("refreshed_timestamp").isNotNull()).withColumn("rn",row_number().over(window_spec)).filter(col("rn")==1).drop("rn").limit(5)
-    for row in df_latest.toLocalIterator():
-        data,status=API_HIT.get_url_response(url=row['URL_Endpoint'],additional_params=json.loads(row['Request_Params']))
-        print(data)
-    df_latest.select("last_checked").show(100,truncate=False)
+        df_latest = df_new.filter(col("refreshed_timestamp").isNotNull()).withColumn("rn",row_number().over(window_spec)).filter(col("rn")==1).drop("rn").limit(20)
+        failed_dates = set()
+        for row in df_latest.toLocalIterator():
+            try:
+                data,status=API_HIT.get_url_response(url=row['URL_Endpoint'],additional_params=json.loads(row["Request_Params"]))
+                if status==200:
+                    if data==json.loads(row["Raw_Api_Response"]):
+                        # print("Matched")
+                        pass
+                    else:
+                        # print("No match")
+                        payload = {
+                                "URL_Endpoint": row['URL_Endpoint'],
+                                "API_Request_Type": row['API_Request_Type'],
+                                "Entity_Requested": row['API_Request_Type'],
+                                "Request_Params":row["Request_Params"],
+                                "Raw_Api_Response": data,
+                                "Response_status": status,
+                                "error_msg": None
+                            }
+                        # print(payload['Request_Params'])
+                        insertion.update_api_response(payload=payload,spark=spark)
+                else:
+                    # print("Failed for:",row['API_Request_Type'])
+                    # print("Error:",data)
+                    failed_dates.add(row["processed_date"])
+            except Exception as e:
+                failed_dates.add(row["processed_date"])
+                continue
+            
+        df_latest = df_latest.select("processed_date").distinct().withColumn(
+            "last_checked",
+            when(col("processed_date").isin(list(failed_dates)),lit(None).cast("timestamp"))
+            .otherwise(current_timestamp())
+        )
+        insertion.merge_into_api_backfill_control_CDC(df=df_latest,spark=spark)
+        pipeline_audit.end_audit(status='PASSED',request_id=request_id,spark=spark)
+    except Exception as e:
+        print("Job Failed with error")
+        pipeline_audit.end_audit(status='FAILED',request_id=request_id,spark=spark)
+        raise
 
 
 if __name__ == "__main__":
     backfill_missing_apis()
-    # Historical_Data()
-    # CDC_Check()
+    Historical_Data()
+    CDC_Check()

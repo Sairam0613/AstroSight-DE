@@ -97,18 +97,7 @@ spark=session.get_spark_session()
 
 
 
-# spark.sql("""DELETE FROM  AstroSight.bronze.api_response t where request_id in ('1c54673c-a5e9-4a94-90ea-a31cd8f040b7',
-# 'c5b2f492-0b3f-49e7-9f5c-0a70f2b55959',
-# '09e80f97-2620-41d3-a629-ff1fec2200d7',
-# '5893beaa-7001-4590-bff8-0163a4b7eadd',
-# '09099967-df99-4a20-b68e-27b21f761637',
-# 'e3be7fca-6cf7-46a9-80b9-55b4656a6683',
-# 'f5eb3e93-b1b6-4031-839d-b8194c2eab1b',
-# 'dd7b4ea1-2cad-4bf4-a795-b2f2318590df',
-# 'c6a6e802-5f1d-4cc6-a553-c6f5933b4bf1',
-# '1e6d22e6-0e78-4552-bdf3-ba1ca64f33ba',
-# '7165f1d4-16f0-499e-8837-74110cc53876',
-# '8118e8af-f06a-4e2f-8534-daed9bc79296')""")
+spark.sql("""DELETE FROM  AstroSight.bronze.api_response t where request_id in ('7eeb8dd1-a74e-46e0-91c7-068bf1b36442')""")
 
 
 # spark.sql("UPDATE AstroSight.bronze.api_response set refreshed_to_silver='N' where refreshed_to_silver='P' and  API_Request_Type='gst'")
@@ -119,27 +108,91 @@ spark=session.get_spark_session()
 
 # spark.sql("SELECT * FROM AstroSight.bronze.api_endpoints").show()
 
-spark.sql("DELETE FROM AstroSight.bronze.api_backfill_control where processed_date=DATE('2026-09-27')")
+# spark.sql("DELETE FROM AstroSight.bronze.api_backfill_control where processed_date=DATE('2026-09-27')")
 
-spark.sql("""
-    INSERT INTO AstroSight.bronze.api_backfill_control 
-    VALUES (
-        date '2026-09-27', 
-        5, 
-        0, 
-        array('neo', 'IPS', 'gst', 'cme', 'apod'), 
-        CURRENT_TIMESTAMP(), 
-        CURRENT_TIMESTAMP(),
-        Null
-    )
-""")
+# spark.sql("""
+#     INSERT INTO AstroSight.bronze.api_backfill_control 
+#     VALUES (
+#         date '2026-09-27', 
+#         5, 
+#         0, 
+#         array('neo', 'IPS', 'gst', 'cme', 'apod'), 
+#         CURRENT_TIMESTAMP(), 
+#         CURRENT_TIMESTAMP(),
+#         Null
+#     )
+# """)
 
 
 # spark.sql("ALTER TABLE AstroSight.bronze.api_backfill_control add columns (last_checked TIMESTAMP)")
 
 # spark.sql("TRUNCATE TABLE AstroSight.bronze.api_backfill_control")
 
-spark.sql("SELECT * from AstroSight.bronze.api_backfill_control order by 1 desc").show(20)
+# spark.sql("SELECT * from AstroSight.bronze.api_backfill_control order by 1 desc").show(20)
+
+# spark.sql("""
+# UPDATE AstroSight.bronze.api_endpoints
+# SET endpoint_url = 'https://ccmc.gsfc.nasa.gov/DONKI-API/get/IPS'
+# WHERE api_name = 'NASA'
+#   AND endpoint_name = 'IPS'
+# """)
+
+# spark.sql("""
+# UPDATE AstroSight.bronze.api_endpoints
+# SET endpoint_url = 'https://ccmc.gsfc.nasa.gov/DONKI-API/get/CME'
+# WHERE api_name = 'NASA'
+#   AND endpoint_name = 'cme'
+# """)
+
+# spark.sql("""
+# UPDATE AstroSight.bronze.api_endpoints
+# SET endpoint_url = 'https://ccmc.gsfc.nasa.gov/DONKI-API/get/GST'
+# WHERE api_name = 'NASA'
+#   AND endpoint_name = 'gst'
+# """)
+
+# spark.sql("""
+# UPDATE AstroSight.bronze.api_response
+# SET URL_Endpoint = 'https://ccmc.gsfc.nasa.gov/DONKI-API/get/IPS'
+# WHERE API_Request_Type = 'IPS'
+# """)
+
+# spark.sql("""
+# UPDATE AstroSight.bronze.api_response
+# SET URL_Endpoint = 'https://ccmc.gsfc.nasa.gov/DONKI-API/get/CME'
+# WHERE API_Request_Type = 'cme'
+# """)
+
+# spark.sql("""
+# UPDATE AstroSight.bronze.api_response
+# SET URL_Endpoint = 'https://ccmc.gsfc.nasa.gov/DONKI-API/get/GST'
+# WHERE API_Request_Type = 'gst'
+# """)
+
+# spark.sql("""
+# UPDATE AstroSight.bronze.api_response
+# SET Request_Params = replace(
+#     replace(Request_Params, '"startDate"', '"start_date"'),
+#     '"endDate"', '"end_date"'
+# )
+# WHERE API_Request_Type = 'cme'
+#   AND Request_Params IS NOT NULL
+# """)
+
+# spark.sql("""
+# UPDATE AstroSight.bronze.api_endpoints
+# SET Request_Params = replace(
+#     replace(Request_Params, '"startDate"', '"start_date"'),
+#     '"endDate"', '"end_date"'
+# )
+#  WHERE api_name = 'NASA'
+#   AND endpoint_name = 'cme'
+# """)
+
+spark.sql("SELECT request_id,Request_Params,API_Request_Type,ingestion_timestamp FROM AstroSight.bronze.api_response where refreshed_to_silver='N'").show(100,truncate=False)
+
+spark.sql("SELECT * from AstroSight.bronze.api_backfill_control order by 1 desc").show(20,truncate=False)
+
 
 # spark.sql("SELECT URL_Endpoint,API_Request_Type,Request_Params,Entity_Requested from AstroSight.bronze.api_response ").show(truncate=False)
 
