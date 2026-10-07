@@ -97,10 +97,12 @@ spark=session.get_spark_session()
 
 
 
-spark.sql("""DELETE FROM  AstroSight.bronze.api_response t where request_id in ('7eeb8dd1-a74e-46e0-91c7-068bf1b36442')""")
+# spark.sql("""DELETE FROM  AstroSight.bronze.api_response t where request_id in ('7eeb8dd1-a74e-46e0-91c7-068bf1b36442')""")
 
 
-# spark.sql("UPDATE AstroSight.bronze.api_response set refreshed_to_silver='N' where refreshed_to_silver='P' and  API_Request_Type='gst'")
+# spark.sql("""UPDATE AstroSight.bronze.api_response set refreshed_to_silver='Y' where request_id in ('a4d87b6e-b438-4a46-924e-b0965063fac6')""")
+
+
 
 # spark.sql("SELECT request_id,ingestion_timestamp,Request_Params,Entity_Requested,refreshed_to_silver,ingestion_timestamp FROM AstroSight.bronze.api_response t where t.refreshed_to_silver='N'").show(20,truncate=False)
 
@@ -189,9 +191,11 @@ spark.sql("""DELETE FROM  AstroSight.bronze.api_response t where request_id in (
 #   AND endpoint_name = 'cme'
 # """)
 
-spark.sql("SELECT request_id,Request_Params,API_Request_Type,ingestion_timestamp FROM AstroSight.bronze.api_response where refreshed_to_silver='N'").show(100,truncate=False)
+# spark.sql("SELECT request_id,Request_Params,API_Request_Type,ingestion_timestamp FROM AstroSight.bronze.api_response where refreshed_to_silver='N'").show(100,truncate=False)
 
-spark.sql("SELECT * from AstroSight.bronze.api_backfill_control order by 1 desc").show(20,truncate=False)
+# spark.sql("SELECT * from AstroSight.bronze.api_backfill_control order by 1 desc").show(20,truncate=False)
+
+
 
 
 # spark.sql("SELECT URL_Endpoint,API_Request_Type,Request_Params,Entity_Requested from AstroSight.bronze.api_response ").show(truncate=False)

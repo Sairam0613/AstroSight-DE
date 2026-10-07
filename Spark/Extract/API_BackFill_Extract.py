@@ -157,5 +157,5 @@ def CDC_Check():
 
 if __name__ == "__main__":
     backfill_missing_apis()
-    Historical_Data()
+    # Historical_Data()
     CDC_Check()

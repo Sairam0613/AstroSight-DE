@@ -288,3 +288,15 @@ FROM   c c
        left join g g
               ON c.processed_date = g.processed_date
 ORDER  BY 1 DESC; 
+
+
+
+--Airflow CLI Commsnds--
+
+docker exec astrosight-airflow-scheduler airflow dags list -- To see All the DAGS 
+
+docker exec astrosight-airflow-scheduler airflow dags trigger ASTROSIGHT_MASTER_DAG  -- To Trigger a DAG 
+
+docker exec astrosight-airflow-scheduler airflow dags list-runs -d ASTROSIGHT_MASTER_DAG -s 2026-10-05 -- To see Current Dates Runs of a DAG 
+ 
+docker exec astrosight-airflow-scheduler airflow dags list-runs -d ASTROSIGHT_MASTER_DAG  -- To see ALL Runs.

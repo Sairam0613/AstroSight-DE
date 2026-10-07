@@ -75,18 +75,18 @@ with DAG(
                 failed_states = ['failed']
             )
 
-    BackFill_pipeline = TriggerDagRunOperator(
-                task_id = "trigger_BackFill_pipeline",
-                trigger_dag_id = "BACKFILL_pipeline",
-                wait_for_completion=True,
-                poke_interval = 30,
-                reset_dag_run = True,
-                allowed_states = ['success'],
-                failed_states = ['failed']
-            )
+    # BackFill_pipeline = TriggerDagRunOperator(
+    #             task_id = "trigger_BackFill_pipeline",
+    #             trigger_dag_id = "BACKFILL_pipeline",
+    #             wait_for_completion=True,
+    #             poke_interval = 30,
+    #             reset_dag_run = True,
+    #             allowed_states = ['success'],
+    #             failed_states = ['failed']
+    #         )
     
     end = EmptyOperator(
         task_id="end"
     )
 
-    start >>  neo_pipeline >> gst_pipeline >> apod_pipeline >> cme_pipeline >> IPS_pipeline >> BackFill_pipeline >> end
+    start >>  neo_pipeline >> gst_pipeline >> apod_pipeline >> cme_pipeline >> IPS_pipeline  >> end
