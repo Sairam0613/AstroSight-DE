@@ -1,6 +1,6 @@
 from Configs.Spark_Core import session,insertion,pipeline_audit
 from Configs.API import Resolve_Params,API_HIT
-from pyspark.sql.functions import col,explode,substr,to_date,collect_list,trunc,current_date,date_sub,count,lit,current_timestamp,concat,date_format,row_number,when
+from pyspark.sql.functions import col,explode,substr,to_date,collect_list,trunc,current_date,date_sub,count,lit,current_timestamp,concat,date_format,row_number,when,min,max,explode,sequence,expr
 from pyspark.sql.types import StructType, StructField, DateType
 from pyspark.sql.window import Window
 from datetime import date,timedelta
@@ -68,36 +68,46 @@ def backfill_missing_apis():
 def Historical_Data():
     spark = session.get_spark_session()
     request_id = pipeline_audit.start_audit(pipeline_stage='HISTORICAL_MISSING',pipeline_target_table='api_response',spark=spark)
-    temp_schema = StructType([
-        StructField("processed_date",DateType(),False)
-    ])
-    active_month = None
-    df_con = spark.table(f"{iceberg_catalog}.{bronze}.api_backfill_control").filter(col("missing_apis").isNotNull()).orderBy(col("processed_date"),ascending=False)
+    df_con = spark.table(f"{iceberg_catalog}.{bronze}.api_backfill_control").filter(col("missing_apis").isNull()).select(col("processed_date")).distinct().orderBy(col("processed_date"),ascending=False)
     df_api = spark.table(f"{iceberg_catalog}.{bronze}.api_endpoints").filter((col("api_name")=="NASA")&(col("is_active")=="Y")).agg(
         count("*").alias("total_active_api"),
-        collect_list("endpoint_name").alias("missing_apis")
-    )
-    start_date = date.today()- timedelta(days=1)
-    total_dates = []
+        collect_list("endpoint_name").alias("missing_apis"))                                   
     try:
-        while active_month is None:
-            first_date = start_date.replace(day=1)
-            while start_date!=first_date:
-                total_dates.append(start_date)
-                start_date=start_date-timedelta(days=1)
-            df_dates = spark.createDataFrame([(d,) for d in total_dates],schema=temp_schema)
-            df_new = df_dates.alias("d").join(df_con.alias("c"),col("d.processed_date")==col("c.processed_date"),"left_anti")
-            if df_new.isEmpty():
-                first_date-timedelta(days=1)
-            else:
-                active_month="Y"
+        date_range = df_con.agg(
+        min("processed_date").alias("start_date"),
+        max("processed_date").alias("end_date")
+            ).first()
+        start_date = date_range['start_date']
+        end_date  = date_range['end_date']
 
-        if active_month=="Y":
-            df_res = df_new.crossJoin(df_api).withColumn("processed_apis_count",lit(0)).withColumn("last_ingestion",current_timestamp()).withColumn("last_updated",lit(None))\
-                        .select("processed_date","total_active_api","processed_apis_count","missing_apis","last_ingestion","last_updated")
-            # df_res.show()
-            insertion.merge_into_api_backfill_control_historical(df=df_res,spark=spark)
-            pipeline_audit.end_audit(status='PASSED',request_id=request_id,spark=spark)
+        df_dates = spark.createDataFrame(
+            [(start_date,end_date)],["start_date","end_date"]
+        ).select(
+            explode(
+                sequence(
+                    col("start_date"),
+                    date_sub(current_date(),1),
+                    expr("INTERVAL 1 DAY")
+                )
+            ).alias("processed_date")
+        )
+        df_missing = df_dates.join(df_con,"processed_date","left_anti")
+        if df_missing.limit(1).count()>0:
+            df_res = df_missing.crossJoin(df_api).withColumn("processed_apis_count",lit(0)).withColumn("last_ingestion",current_timestamp()).withColumn("last_updated",lit(None))\
+            .select("processed_date","total_active_api","processed_apis_count","missing_apis","last_ingestion","last_updated")
+        else:
+            df_previous = spark.createDataFrame(
+                [
+                    (start_date - timedelta(days=1),),
+                    (start_date - timedelta(days=2),)
+                ],
+                ['processed_date']
+            )
+            df_res = df_previous.crossJoin(df_api).withColumn("processed_apis_count",lit(0)).withColumn("last_ingestion",current_timestamp()).withColumn("last_updated",lit(None))\
+            .select("processed_date","total_active_api","processed_apis_count","missing_apis","last_ingestion","last_updated")
+        # df_res.show()  
+        insertion.merge_into_api_backfill_control_historical(df=df_res,spark=spark)
+        pipeline_audit.end_audit(status='PASSED',request_id=request_id,spark=spark)
     except Exception as e:
         print(f"Job Failed with error {e}")
         pipeline_audit.end_audit(status='FAILED',request_id=request_id,spark=spark)
@@ -157,5 +167,5 @@ def CDC_Check():
 
 if __name__ == "__main__":
     backfill_missing_apis()
-    # Historical_Data()
-    CDC_Check()
+    Historical_Data()
+    # CDC_Check()

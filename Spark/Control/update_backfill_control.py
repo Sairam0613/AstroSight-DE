@@ -91,7 +91,6 @@ def update_missing_api():
                     ON c.processed_date = g.processed_date
         ORDER  BY 1 DESC
         """)
-
         insertion.merge_into_api_backfill_control(df=df,spark=spark)
         pipeline_audit.end_audit(status='PASSED',request_id=request_id,spark=spark)
     except Exception as e:
