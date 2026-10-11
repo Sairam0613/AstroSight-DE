@@ -106,7 +106,6 @@ spark=session.get_spark_session()
 
 # spark.sql("SELECT request_id,ingestion_timestamp,Request_Params,Entity_Requested,refreshed_to_silver,ingestion_timestamp FROM AstroSight.bronze.api_response t where t.refreshed_to_silver='N'").show(20,truncate=False)
 
-# spark.sql("SELECT * from AstroSight.bronze.api_backfill_control ").show()
 
 # spark.sql("SELECT * FROM AstroSight.bronze.api_endpoints").show()
 
@@ -195,7 +194,22 @@ spark=session.get_spark_session()
 
 # spark.sql("SELECT * from AstroSight.bronze.api_backfill_control order by 1 desc").show(20,truncate=False)
 
+# spark.sql(f"""
+# UPDATE AstroSight.bronze.api_response
+# SET Request_Params = replace(
+#     replace(Request_Params, '"startDate"', '"start_date"'),
+#     '"endDate"', '"end_date"'
+# )
+# WHERE Request_Params LIKE '%startDate%'
+#    OR Request_Params LIKE '%endDate%';
+# """)
 
+# spark.sql(f"""
+# SELECT Request_Params
+# FROM AstroSight.bronze.api_response
+# WHERE Request_Params LIKE '%"startDate"%'
+#    OR Request_Params LIKE '%"endDate"%';
+# """).show()
 
 
 # spark.sql("SELECT URL_Endpoint,API_Request_Type,Request_Params,Entity_Requested from AstroSight.bronze.api_response ").show(truncate=False)
@@ -210,5 +224,10 @@ spark=session.get_spark_session()
 # """).show()
 
 # spark.sql("update AstroSight.bronze.api_response set refreshed_to_silver='Y',refreshed_timestamp=current_timestamp() where request_id='66610e5d-8d11-4b77-95bf-1ed54dc1f810'")
+
+
+
+spark.sql("SELECT * from AstroSight.bronze.api_backfill_control order by 1 desc").show()
+
 
 spark.stop()

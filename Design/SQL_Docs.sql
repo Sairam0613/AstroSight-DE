@@ -127,12 +127,10 @@ VALUES
 
 
 
+--Update API BackFill Control Table --
 
-
-
-
---Update BackFill SQL Query --
-WITH A
+MERGE INTO AstroSight.bronze.api_backfill_control tgt
+using (WITH A
 AS (
 	SELECT count(*) AS total_active_api
 	FROM AstroSight.bronze.api_endpoints t
@@ -141,7 +139,7 @@ AS (
 	)
 	,B
 AS (
-	SELECT DISTINCT (CAST(substr(request_params,17,10) AS DATE)) AS processed_date
+	SELECT DISTINCT (try_cast(substr(request_params,17,10) AS DATE)) AS processed_date
 		,api_request_type
 		,ingestion_timestamp
 	FROM AstroSight.bronze.api_response
@@ -161,7 +159,7 @@ AS (
 	)
 	,D
 AS (
-	SELECT DISTINCT (CAST(substr(r.request_params,17,10) AS DATE)) AS processed_date
+	SELECT DISTINCT (try_cast(substr(r.request_params,17,10) AS DATE)) AS processed_date
 	FROM AstroSight.bronze.api_response r where r.request_params is not null and r.refreshed_to_silver='Y'
 	)
 	,E
@@ -181,7 +179,7 @@ AS (
 		,r.ingestion_timestamp
 	FROM E e
 	left JOIN AstroSight.bronze.api_response r ON r.api_request_type = e.endpoint_name
-		AND CAST(substr(r.request_params,17,10) AS DATE) = e.processed_date
+		AND try_cast(substr(r.request_params,17,10) AS DATE) = e.processed_date
 		AND r.response_status = 200
         and r.refreshed_to_silver='Y'
 	WHERE r.api_request_type IS NULL
@@ -203,9 +201,10 @@ SELECT c.processed_date
     null as last_checked
 FROM C c
 LEFT JOIN G g ON c.processed_date = g.processed_date
-ORDER BY 1 DESC;
-
-
+ORDER BY 1 DESC) src
+ON tgt.processed_date = src.processed_date
+WHEN MATCHED THEN UPDATE SET *
+WHEN NOT MATCHED THEN INSERT *
 
 -----------------------------------------------------------------------------------------------------
 
